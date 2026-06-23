@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>First-time setup — IMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <div class="brand-row"><div class="emblem">IM</div><b>Internship Management System</b></div>
+      <div>
+        <div class="eyebrow">One-time setup</div>
+        <h1>Create the first administrator.</h1>
+        <p>Run this once to create the Super Admin sign-in. After creating it, finish the
+           short console step shown on the right, then delete this page from your repository.</p>
+      </div>
+      <div class="foot">Use only during initial setup</div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <h2>Create Super Admin</h2>
+        <p class="lead">This creates the authentication account only. You'll assign the admin role in the Firebase console (one step).</p>
+
+        <div id="alert" class="alert err"></div>
+        <div id="done" class="alert ok"></div>
+
+        <form id="setupForm">
+          <div class="field">
+            <label for="username">Admin username</label>
+            <input id="username" type="text" value="admin" placeholder="admin" required />
+            <div class="hint">Signs in as <span id="emailPreview">admin@ims.local</span></div>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="text" placeholder="At least 6 characters" required />
+          </div>
+          <button id="submitBtn" type="submit" class="btn block">Create administrator</button>
+        </form>
+
+        <div id="next" style="display:none;margin-top:22px;">
+          <div class="card"><div class="card-body">
+            <h3 style="font-size:15px;margin-bottom:8px;">Final step — assign the admin role</h3>
+            <ol class="muted" style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.7;">
+              <li>Open Firebase Console → <b>Firestore Database</b>.</li>
+              <li>Create collection <b>users</b> → document ID = <b><span id="uidOut">…</span></b></li>
+              <li>Add fields: <b>username</b> = <span id="userOut">admin</span>,
+                  <b>role</b> = <b>admin</b>, <b>department</b> = (empty).</li>
+              <li>Return to <a href="index.html">the sign-in page</a> and log in.</li>
+            </ol>
+          </div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const form = document.getElementById("setupForm");
+    const alertBox = document.getElementById("alert");
+    const doneBox = document.getElementById("done");
+    const btn = document.getElementById("submitBtn");
+    const userInput = document.getElementById("username");
+    const preview = document.getElementById("emailPreview");
+
+    userInput.addEventListener("input", () => {
+      preview.textContent = `${(userInput.value.trim().toLowerCase() || "admin")}@${LOGIN_DOMAIN}`;
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertBox.classList.remove("show");
+      const username = userInput.value.trim().toLowerCase();
+      const password = document.getElementById("password").value;
+      if (password.length < 6) { alertBox.textContent = "Password must be at least 6 characters."; alertBox.classList.add("show"); return; }
+
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Creating…';
+      try {
+        const cred = await auth.createUserWithEmailAndPassword(usernameToEmail(username), password);
+        // Try to also write the role doc (works if rules allow self-create; otherwise do it in console).
+        try {
+          await db.collection("users").doc(cred.user.uid).set({ username, role: "admin", department: "" });
+        } catch (_) { /* fall back to the console step below */ }
+
+        document.getElementById("uidOut").textContent = cred.user.uid;
+        document.getElementById("userOut").textContent = username;
+        document.getElementById("next").style.display = "block";
+        doneBox.textContent = "Admin account created. Complete the step below, then sign in.";
+        doneBox.classList.add("show");
+        form.style.display = "none";
+        await auth.signOut();
+      } catch (err) {
+        const msg = err.code === "auth/email-already-in-use" ? "This admin username already exists. Go to the sign-in page." :
+                    err.code === "auth/weak-password" ? "Password is too weak." : ("Could not create: " + err.message);
+        alertBox.textContent = msg; alertBox.classList.add("show");
+      } finally {
+        btn.disabled = false; btn.textContent = "Create administrator";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// ============================================================
+//  Internship Management System — Firestore security rules
+//  Paste these in Firebase Console > Firestore Database > Rules.
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // The signed-in user's profile document.
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().role == 'admin';
+    }
+
+    function myDept() {
+      return profile().department;
+    }
+
+    // ---------------- users ----------------
+    // A user can read their own profile; admins can read everyone.
+    // Only admins may modify roles/accounts.
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ---------------- departments ----------------
+    // Everyone signed in can see the list; only admins manage it.
+    match /departments/{deptId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------------- students ----------------
+    // Everyone signed in can view the student list; only admins edit it.
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------------- internships ----------------
+    // Anyone signed in can read records (for reports).
+    // Admins write anything. Department users may only write records
+    // whose departmentId equals their own department.
+    match /internships/{recordId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        || (isSignedIn() && request.resource.data.departmentId == myDept());
+      allow delete: if isAdmin();
+    }
+  }
+}
