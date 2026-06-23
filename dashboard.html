@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Internship Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app" id="app" style="visibility:hidden;">
+    <div class="scrim" id="scrim"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <div class="emblem">IM</div>
+        <div>
+          <b>IMS</b><br />
+          <span data-i18n="app_name">Internship Records</span>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <div class="nav-label" data-i18n="g_workspace">Workspace</div>
+        <a href="#overview" data-view="overview" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span data-i18n="nav_overview">Overview</span>
+        </a>
+        <a href="#students" data-view="students" data-admin>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span data-i18n="nav_students">Students</span>
+        </a>
+        <a href="#internships" data-view="internships">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span id="navInternLabel" data-i18n="nav_internships">Internships</span>
+        </a>
+
+        <div class="nav-label" data-admin data-i18n="g_admin">Administration</div>
+        <a href="#accounts" data-view="accounts" data-admin>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+          <span data-i18n="nav_accounts">Departments &amp; Accounts</span>
+        </a>
+
+        <div class="nav-label" data-i18n="g_insight">Insight</div>
+        <a href="#reports" data-view="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+          <span data-i18n="nav_reports">Reports</span>
+        </a>
+      </nav>
+
+      <div class="side-foot">
+        <div class="side-user">
+          <div class="avatar" id="sideAvatar">A</div>
+          <div class="meta">
+            <b id="sideName">—</b>
+            <span id="sideRole">—</span>
+          </div>
+        </div>
+        <button class="btn ghost sm block" id="logoutBtn" style="color:#c7d0e4;border-color:rgba(255,255,255,.15);" data-i18n="sign_out">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <h2 id="pageTitle">Overview</h2>
+          <div class="sub" id="pageSub">Snapshot of internship progress</div>
+        </div>
+        <div class="spacer"></div>
+        <div class="tb-actions">
+          <button id="langToggle" class="lang-btn">English</button>
+          <span class="chip" id="roleChip">—</span>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <section class="view active" id="view-overview">
+          <div class="stat-grid" id="statGrid"></div>
+          <div class="card">
+            <div class="card-head"><h3 id="ovTableTitle">Recent activity</h3><div class="spacer"></div></div>
+            <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="ovTable"></div></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-students">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow-l" data-i18n="eb_registry">Student Registry</div>
+              <h2 style="margin-top:2px;" data-i18n="h_all_students">All students</h2>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn" id="addStudentBtn" data-i18n="add_student">+ Add student</button>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="toolbar">
+                <input class="search" id="studentSearch" type="search" data-i18n-ph="ph_search_student" placeholder="Search name or ID…" />
+                <select id="studentTimeFilter">
+                  <option value="" data-i18n="all_times">All study times</option>
+                  <option value="Morning" data-i18n="morning">Morning</option>
+                  <option value="Evening" data-i18n="evening">Evening</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="studentsTable"></div></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-internships">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow-l" id="internEyebrow" data-i18n="eb_status">Internship Status</div>
+              <h2 style="margin-top:2px;" id="internHeading">Internship records</h2>
+            </div>
+            <div class="spacer"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="toolbar">
+                <input class="search" id="internSearch" type="search" data-i18n-ph="ph_search_only" placeholder="Search student…" />
+                <select id="internDeptFilter" data-admin></select>
+                <select id="internStatusFilter">
+                  <option value="" data-i18n="all_statuses">All statuses</option>
+                  <option value="Completed" data-i18n="s_completed">Completed</option>
+                  <option value="Not Completed" data-i18n="s_notcompleted">Not Completed</option>
+                  <option value="Pending" data-i18n="s_pending">Pending</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="internTable"></div></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-accounts">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow-l" data-i18n="eb_admin">Administration</div>
+              <h2 style="margin-top:2px;" data-i18n="h_accounts">Departments &amp; accounts</h2>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn ghost" id="addDeptBtn" data-i18n="add_department">+ Add department</button>
+            <button class="btn" id="addAccountBtn" data-i18n="create_account">+ Create account</button>
+          </div>
+          <div class="grid-2" style="align-items:start;">
+            <div class="card">
+              <div class="card-head"><h3 data-i18n="h_departments">Departments</h3></div>
+              <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="deptTable"></div></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3 data-i18n="h_login_accounts">Login accounts</h3></div>
+              <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="accountsTable"></div></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-reports">
+          <div class="print-head" id="printHead"></div>
+          <div class="section-head no-print">
+            <div>
+              <div class="eyebrow-l" data-i18n="eb_reporting">Reporting</div>
+              <h2 style="margin-top:2px;" id="reportHeading">Internship report</h2>
+            </div>
+            <div class="spacer"></div>
+            <select id="reportDeptFilter" data-admin></select>
+            <button class="btn ghost" id="printBtn" data-i18n="print">Print</button>
+            <button class="btn gold" id="csvBtn" data-i18n="export_csv">Export CSV</button>
+          </div>
+          <div class="card">
+            <div class="card-body" style="padding:0;"><div class="table-wrap"><div id="reportTable"></div></div></div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Internship Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <button id="langToggle" class="lang-btn lang-float">English</button>
+
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <div class="brand-row">
+        <div class="emblem">IM</div>
+        <b>Internship Management System</b>
+      </div>
+      <div>
+        <div class="eyebrow" data-i18n="hero_eyebrow">College &amp; Institute Edition</div>
+        <h1 data-i18n="hero_title">Track every student internship, department by department.</h1>
+        <p data-i18n="hero_text">One central record for student placements. Each department confirms its own
+           completion status, while administrators see the full picture.</p>
+      </div>
+      <div class="foot" data-i18n="hero_foot">Secure access · Role-based permissions</div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="brand-row" style="margin-bottom:22px;">
+          <div class="emblem">IM</div>
+          <div>
+            <b style="font-family:var(--display);color:var(--ink);">IMS</b>
+            <div class="muted" style="font-size:12px;" data-i18n="brand_sub">Internship Management System</div>
+          </div>
+        </div>
+        <h2 data-i18n="login_title">Sign in to your account</h2>
+        <p class="lead" data-i18n="login_lead">Administrators and department accounts both sign in here.</p>
+
+        <div id="alert" class="alert err"></div>
+
+        <form id="loginForm">
+          <div class="field">
+            <label for="username" data-i18n="f_username">Username</label>
+            <input id="username" type="text" autocomplete="username" data-i18n-ph="ph_username" placeholder="e.g. admin or finance" required />
+            <div class="hint" data-i18n="username_hint">Use your account name only — no email needed.</div>
+          </div>
+          <div class="field">
+            <label for="password" data-i18n="f_password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" data-i18n-ph="ph_password" placeholder="Your password" required />
+          </div>
+          <button id="submitBtn" type="submit" class="btn block" data-i18n="sign_in">Sign in</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+/* ============================================================
+   IMS — Dashboard application logic (bilingual EN/KU)
+   ============================================================ */
+(function () {
+  "use strict";
+
+  let me = null, isAdmin = false;
+  let students = [], departments = [], accounts = [], internMap = {};
+  let currentView = "overview", activeDept = "";
+  const unsub = [];
+
+  const $ = (id) => document.getElementById(id);
+  const STATUSES = ["Completed", "Not Completed", "Pending"];
+  const T = (k, v) => (window.t ? window.t(k, v) : k);
+
+  // ---------- AUTH GUARD ----------
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) { window.location.replace("index.html"); return; }
+    const profile = await getUserProfile(user.uid);
+    if (!profile) { await auth.signOut(); window.location.replace("index.html"); return; }
+    me = profile; isAdmin = profile.role === "admin";
+    activeDept = isAdmin ? "" : profile.department;
+    setupRoleUI();
+    if (isAdmin) await ensureDepartmentsSeeded();
+    attachListeners();
+    navigate("overview");
+    $("app").style.visibility = "visible";
+  });
+
+  // Re-render everything when the language switches
+  window.onLangChange = function () {
+    updateRoleText();
+    populateDeptSelectors();
+    navigate(currentView);
+  };
+
+  function setupRoleUI() {
+    if (!isAdmin) {
+      document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = "none"));
+      const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
+    }
+    $("sideAvatar").textContent = (me.username[0] || "?").toUpperCase();
+    updateRoleText();
+    if (window.applyI18n) window.applyI18n();
+  }
+  function updateRoleText() {
+    $("sideName").textContent = me.username;
+    $("sideRole").textContent = isAdmin ? T("administrator") : me.department;
+    $("roleChip").textContent = isAdmin ? T("super_admin") : T("department_role", { d: me.department });
+  }
+
+  // ---------- LISTENERS ----------
+  function attachListeners() {
+    unsub.push(db.collection("students").onSnapshot((s) => {
+      students = s.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      refresh();
+    }));
+    unsub.push(db.collection("departments").onSnapshot((s) => {
+      departments = s.docs.map((d) => d.data().name).sort();
+      if (!isAdmin) departments = [me.department];
+      if (isAdmin && !activeDept && departments.length) activeDept = departments[0];
+      populateDeptSelectors(); refresh();
+    }));
+    unsub.push(db.collection("internships").onSnapshot((s) => {
+      internMap = {}; s.docs.forEach((d) => { internMap[d.id] = { id: d.id, ...d.data() }; });
+      refresh();
+    }));
+    if (isAdmin) {
+      unsub.push(db.collection("users").onSnapshot((s) => {
+        accounts = s.docs.map((d) => ({ uid: d.id, ...d.data() }));
+        if (currentView === "accounts") renderAccounts();
+      }));
+    }
+  }
+
+  async function ensureDepartmentsSeeded() {
+    const snap = await db.collection("departments").limit(1).get();
+    if (snap.empty) {
+      const batch = db.batch();
+      DEFAULT_DEPARTMENTS.forEach((name) => batch.set(db.collection("departments").doc(slug(name)), { name }));
+      await batch.commit();
+    }
+  }
+
+  // ---------- HELPERS ----------
+  function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function key(id, dept) { return `${id}__${slug(dept)}`; }
+  function statusOf(id, dept) { const r = internMap[key(id, dept)]; return r ? r.status : "Pending"; }
+  function noteOf(id, dept) { const r = internMap[key(id, dept)]; return r ? (r.note || "") : ""; }
+  function statusLabel(s) { return s === "Completed" ? T("s_completed") : s === "Not Completed" ? T("s_notcompleted") : T("s_pending"); }
+  function statusTag(s) {
+    const cls = s === "Completed" ? "ok" : s === "Not Completed" ? "no" : "pending";
+    return `<span class="tag ${cls}">${escapeHtml(statusLabel(s))}</span>`;
+  }
+  function fmtDate(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const loc = window.getLang && window.getLang() === "ku" ? "ckb" : undefined;
+    try { return d.toLocaleDateString(loc, { year: "numeric", month: "short", day: "numeric" }); }
+    catch (e) { return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+  }
+  function toast(msg, type) {
+    const t = $("toast"); t.textContent = msg; t.className = "toast show " + (type || "");
+    setTimeout(() => (t.className = "toast"), 2600);
+  }
+  function emptyState(title, sub) {
+    return `<div class="empty"><div class="emblem">IM</div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(sub)}</p></div>`;
+  }
+
+  // ---------- RENDER ROUTER ----------
+  function refresh() {
+    renderStats();
+    switch (currentView) {
+      case "overview": renderOverview(); break;
+      case "students": renderStudents(); break;
+      case "internships": renderInternships(); break;
+      case "accounts": renderDepartments(); renderAccounts(); break;
+      case "reports": renderReport(); break;
+    }
+  }
+
+  function stat(k, v) { return `<div class="stat"><div class="k">${escapeHtml(k)}</div><div class="v tnum">${escapeHtml(String(v))}</div></div>`; }
+  function renderStats() {
+    const grid = $("statGrid");
+    if (isAdmin) {
+      let completed = 0, total = 0;
+      students.forEach((s) => departments.forEach((d) => { total++; if (statusOf(s.id, d) === "Completed") completed++; }));
+      grid.innerHTML = stat(T("st_students"), students.length) + stat(T("st_departments"), departments.length) +
+        stat(T("st_pl_completed"), completed) + stat(T("st_total_slots"), total);
+    } else {
+      const dept = me.department; let done = 0, no = 0, pend = 0;
+      students.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
+      grid.innerHTML = stat(T("st_students"), students.length) + stat(T("st_completed"), done) +
+        stat(T("st_notcompleted"), no) + stat(T("st_pending"), pend);
+    }
+  }
+
+  function statusBar(done, total) {
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:999px;height:9px;overflow:hidden;">
+      <div style="width:${pct}%;height:100%;background:var(--gold);"></div></div>
+      <div class="muted" style="font-size:11.5px;margin-top:3px;">${T("pct_of", { p: pct, t: total })}</div>`;
+  }
+  function renderOverview() {
+    const host = $("ovTable");
+    if (isAdmin) {
+      $("ovTableTitle").textContent = T("ov_glance");
+      if (!departments.length) { host.innerHTML = emptyState(T("e_nodepts_t"), T("e_nodepts_s")); return; }
+      const rows = departments.map((d) => {
+        let done = 0, no = 0, pend = 0;
+        students.forEach((s) => { const st = statusOf(s.id, d); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
+        return `<tr><td class="name">${escapeHtml(d)}</td><td class="cell-num">${done}</td><td class="cell-num">${no}</td><td class="cell-num">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
+      }).join("");
+      host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_completed")}</th><th>${T("c_notcompleted")}</th><th>${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    } else {
+      const dept = me.department;
+      $("ovTableTitle").textContent = T("ov_recent", { d: dept });
+      const recent = students.map((s) => ({ s, r: internMap[key(s.id, dept)] }))
+        .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
+      if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
+      const rows = recent.map(({ s, r }) =>
+        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
+      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+  }
+
+  function renderStudents() {
+    const q = ($("studentSearch").value || "").toLowerCase().trim();
+    const tf = $("studentTimeFilter").value;
+    const list = students.filter((s) =>
+      (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!tf || s.time === tf));
+    const host = $("studentsTable");
+    if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
+    if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
+    const timeLabel = (x) => x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : (x || "—");
+    const rows = list.map((s) => `<tr>
+      <td><div class="name">${escapeHtml(s.name)}</div></td>
+      <td class="id">${escapeHtml(s.studentId)}</td>
+      <td>${escapeHtml(s.major || "—")}</td>
+      <td>${escapeHtml(s.stage || "—")}</td>
+      <td><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
+      <td><div class="row-actions">
+        <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
+        <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>
+      </div></td></tr>`).join("");
+    host.innerHTML = `<table><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderInternships() {
+    const dept = isAdmin ? activeDept : me.department;
+    if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: dept }) : T("h_intern_records"); }
+    else { $("internHeading").textContent = T("h_mydept_status", { d: me.department }); }
+    const host = $("internTable");
+    if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
+    if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), isAdmin ? T("e_nostud_admin_s") : T("e_nostud_dept_s")); return; }
+    const q = ($("internSearch").value || "").toLowerCase().trim();
+    const sf = $("internStatusFilter").value;
+    const list = students.filter((s) => {
+      const st = statusOf(s.id, dept);
+      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf);
+    });
+    if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
+    const rows = list.map((s) => {
+      const r = internMap[key(s.id, dept)];
+      return `<tr>
+        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${escapeHtml(s.major || "")}</div></td>
+        <td class="id">${escapeHtml(s.studentId)}</td>
+        <td>${statusTag(statusOf(s.id, dept))}</td>
+        <td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
+        <td class="muted">${r ? fmtDate(r.date) : "—"}</td>
+        <td><div class="row-actions"><button class="btn sm" data-mark="${s.id}">${T("update")}</button></div></td>
+      </tr>`;
+    }).join("");
+    host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderDepartments() {
+    const host = $("deptTable");
+    if (!departments.length) { host.innerHTML = emptyState(T("e_nodept2_t"), T("e_nodept2_s")); return; }
+    const rows = departments.map((d) => {
+      const linked = accounts.filter((a) => a.role === "department" && a.department === d).length;
+      return `<tr><td class="name">${escapeHtml(d)}</td>
+        <td>${linked ? `<span class="chip">${T("n_accounts", { n: linked })}</span>` : `<span class="muted">${T("no_account")}</span>`}</td>
+        <td><div class="row-actions"><button class="btn danger sm" data-del-dept="${escapeHtml(d)}">${T("remove")}</button></div></td></tr>`;
+    }).join("");
+    host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_accounts")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderAccounts() {
+    const host = $("accountsTable");
+    if (!accounts.length) { host.innerHTML = emptyState(T("e_noacc_t"), T("e_noacc_s")); return; }
+    const rows = accounts.slice().sort((a, b) => (a.role || "").localeCompare(b.role || "")).map((a) => `<tr>
+      <td class="name">${escapeHtml(a.username)}</td>
+      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : `<span class="chip">${escapeHtml(a.department || "—")}</span>`}</td>
+      <td><div class="row-actions">${a.uid === me.uid ? `<span class="muted" style="font-size:12px;">${T("you")}</span>` : `<button class="btn danger sm" data-del-account="${a.uid}">${T("remove")}</button>`}</div></td>
+    </tr>`).join("");
+    host.innerHTML = `<table><thead><tr><th>${T("c_username")}</th><th>${T("c_role")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderReport() {
+    const host = $("reportTable");
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
+    $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: filterDept }) : T("h_report_full");
+    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), T("e_norep_s")); return; }
+    if (isAdmin && !filterDept) {
+      const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
+        departments.map((d) => `<th class="matrix-cell">${escapeHtml(d)}</th>`).join("");
+      const rows = students.map((s) => {
+        const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
+        return `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(s.stage || "—")}</td><td>${escapeHtml(s.time || "—")}</td>${cells}</tr>`;
+      }).join("");
+      host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+    } else {
+      const dept = filterDept;
+      const rows = students.map((s) => `<tr>
+        <td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td>
+        <td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(s.stage || "—")}</td><td>${escapeHtml(s.time || "—")}</td>
+        <td>${statusTag(statusOf(s.id, dept))}</td><td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td></tr>`).join("");
+      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+  }
+
+  // ---------- CSV / PRINT ----------
+  function exportCsv() {
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
+    let header, rows;
+    if (isAdmin && !filterDept) {
+      header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments];
+      rows = students.map((s) => [s.name, s.studentId, s.major, s.stage, s.time, ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+    } else {
+      const dept = filterDept;
+      header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
+      rows = students.map((s) => [s.name, s.studentId, s.major, s.stage, s.time, dept, statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+    }
+    const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `IMS_report_${filterDept ? slug(filterDept) : "all"}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(a.href); toast(T("to_csv_exported"), "ok");
+  }
+  function csvCell(v) { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+  function printReport() {
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
+    $("printHead").innerHTML = `<h1>${escapeHtml(filterDept ? T("h_report_dept", { d: filterDept }) : T("h_report_full"))}</h1>
+      <div class="meta">${escapeHtml(T("brand_sub"))} · ${new Date().toLocaleString()}</div>`;
+    window.print();
+  }
+
+  // ---------- MODALS ----------
+  function openModal(html, wide) { $("modal").className = "modal" + (wide ? " wide" : ""); $("modal").innerHTML = html; $("modalBg").classList.add("show"); }
+  function closeModal() { $("modalBg").classList.remove("show"); $("modal").innerHTML = ""; }
+  function showModalErr(msg) { const e = $("mErr"); if (e) { e.textContent = msg; e.classList.add("show"); } }
+  $("modalBg").addEventListener("click", (e) => { if (e.target === $("modalBg")) closeModal(); });
+
+  function studentModal(existing) {
+    const s = existing || {};
+    openModal(`
+      <div class="modal-head"><h3>${existing ? T("m_edit_student") : T("m_add_student")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <div class="field"><label>${T("f_fullname")}</label><input id="m_name" value="${escapeHtml(s.name || "")}" placeholder="${escapeHtml(T("ph_name"))}" /></div>
+        <div class="grid-2">
+          <div class="field"><label>${T("f_studentid")}</label><input id="m_sid" value="${escapeHtml(s.studentId || "")}" placeholder="${escapeHtml(T("ph_sid"))}" /></div>
+          <div class="field"><label>${T("f_major")}</label><input id="m_major" value="${escapeHtml(s.major || "")}" placeholder="${escapeHtml(T("ph_major"))}" /></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>${T("f_stage")}</label><input id="m_stage" value="${escapeHtml(s.stage || "")}" placeholder="${escapeHtml(T("ph_stage"))}" /></div>
+          <div class="field"><label>${T("f_studytime")}</label>
+            <div class="pills">
+              <label><input type="radio" name="m_time" value="Morning" ${s.time === "Morning" || !s.time ? "checked" : ""}/> ${T("morning")}</label>
+              <label><input type="radio" name="m_time" value="Evening" ${s.time === "Evening" ? "checked" : ""}/> ${T("evening")}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn" id="m_save">${existing ? T("save_changes") : T("btn_add_student")}</button></div>`);
+    $("m_save").addEventListener("click", async () => {
+      const data = {
+        name: $("m_name").value.trim(), studentId: $("m_sid").value.trim(),
+        major: $("m_major").value.trim(), stage: $("m_stage").value.trim(),
+        time: (document.querySelector('input[name="m_time"]:checked') || {}).value || "Morning"
+      };
+      if (!data.name || !data.studentId) { showModalErr(T("err_name_required")); return; }
+      try {
+        if (existing) await db.collection("students").doc(existing.id).update(data);
+        else await db.collection("students").add(data);
+        closeModal(); toast(existing ? T("to_student_updated") : T("to_student_added"), "ok");
+      } catch (e) { showModalErr(T("err_save") + e.message); }
+    });
+  }
+
+  function markModal(student) {
+    const dept = isAdmin ? activeDept : me.department;
+    const cur = statusOf(student.id, dept), note = noteOf(student.id, dept);
+    openModal(`
+      <div class="modal-head"><h3>${T("m_intern_status")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <p class="muted" style="margin-top:0;"><b style="color:var(--ink);">${escapeHtml(student.name)}</b> · ${escapeHtml(student.studentId)}<br/>
+          ${T("l_department")}: <span class="chip">${escapeHtml(dept)}</span></p>
+        <div class="field"><label>${T("f_status")}</label><div class="pills">
+          ${STATUSES.map((st) => `<label><input type="radio" name="m_status" value="${st}" ${cur === st ? "checked" : ""}/> ${statusLabel(st)}</label>`).join("")}
+        </div></div>
+        <div class="field"><label>${T("f_note")}</label><textarea id="m_note" placeholder="${escapeHtml(T("ph_note"))}">${escapeHtml(note)}</textarea></div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn" id="m_savestatus">${T("save_status")}</button></div>`);
+    $("m_savestatus").addEventListener("click", async () => {
+      const status = (document.querySelector('input[name="m_status"]:checked') || {}).value;
+      if (!status) { showModalErr(T("pick_status")); return; }
+      const rec = {
+        studentId: student.id, studentNumber: student.studentId, studentName: student.name,
+        departmentId: dept, status, note: $("m_note").value.trim(),
+        date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
+      };
+      try { await db.collection("internships").doc(key(student.id, dept)).set(rec, { merge: true }); closeModal(); toast(T("to_status_saved"), "ok"); }
+      catch (e) { showModalErr(T("err_save") + e.message); }
+    });
+  }
+
+  function deptModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("m_add_dept")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body"><div id="mErr" class="alert err"></div>
+        <div class="field"><label>${T("f_deptname")}</label><input id="m_dept" placeholder="${escapeHtml(T("ph_deptname"))}" /></div></div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button><button class="btn" id="m_adddept">${T("btn_add_dept")}</button></div>`);
+    $("m_adddept").addEventListener("click", async () => {
+      const name = $("m_dept").value.trim();
+      if (!name) { showModalErr(T("err_deptname")); return; }
+      if (departments.includes(name)) { showModalErr(T("err_dept_exists")); return; }
+      try { await db.collection("departments").doc(slug(name)).set({ name }); closeModal(); toast(T("to_dept_added"), "ok"); }
+      catch (e) { showModalErr(T("err_add") + e.message); }
+    });
+  }
+
+  function accountModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("m_create_account")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body"><div id="mErr" class="alert err"></div>
+        <div class="field"><label>${T("f_role")}</label><div class="pills">
+          <label><input type="radio" name="m_role" value="department" checked/> ${T("role_dept")}</label>
+          <label><input type="radio" name="m_role" value="admin"/> ${T("role_admin")}</label>
+        </div></div>
+        <div class="field" id="deptWrap"><label>${T("f_dept")}</label>
+          <select id="m_acc_dept">${departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("")}</select></div>
+        <div class="field"><label>${T("c_username")}</label><input id="m_user" placeholder="finance" />
+          <div class="hint">${T("signin_becomes", { e: `<span id="emailPreview">finance@${LOGIN_DOMAIN}</span>` })}</div></div>
+        <div class="field"><label>${T("f_password")}</label><input id="m_pass" type="text" placeholder="${escapeHtml(T("ph_pass6"))}" /></div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button><button class="btn" id="m_addacc">${T("btn_create_account")}</button></div>`);
+    document.querySelectorAll('input[name="m_role"]').forEach((r) => r.addEventListener("change", () => {
+      $("deptWrap").style.display = document.querySelector('input[name="m_role"]:checked').value === "department" ? "" : "none";
+    }));
+    $("m_user").addEventListener("input", () => {
+      const p = $("emailPreview"); if (p) p.textContent = `${($("m_user").value.trim().toLowerCase() || "username")}@${LOGIN_DOMAIN}`;
+    });
+    $("m_addacc").addEventListener("click", async () => {
+      const role = document.querySelector('input[name="m_role"]:checked').value;
+      const username = $("m_user").value.trim().toLowerCase();
+      const password = $("m_pass").value;
+      const department = role === "department" ? $("m_acc_dept").value : "";
+      if (!username || !password) { showModalErr(T("err_user_pass")); return; }
+      if (password.length < 6) { showModalErr(T("err_pass6")); return; }
+      const btn = $("m_addacc"); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> ' + T("creating");
+      let secondary;
+      try {
+        secondary = firebase.initializeApp(firebaseConfig, "secondary-" + Date.now());
+        const cred = await secondary.auth().createUserWithEmailAndPassword(usernameToEmail(username), password);
+        await db.collection("users").doc(cred.user.uid).set({ username, role, department });
+        await secondary.auth().signOut();
+        closeModal(); toast(T("to_acc_created"), "ok");
+      } catch (e) {
+        const msg = e.code === "auth/email-already-in-use" ? T("err_user_taken") : e.code === "auth/weak-password" ? T("err_pass_weak") : (T("err_create") + e.message);
+        showModalErr(msg);
+      } finally { if (secondary) { try { await secondary.delete(); } catch (_) {} } btn.disabled = false; btn.textContent = T("btn_create_account"); }
+    });
+  }
+
+  function confirmModal(title, body, onYes, danger) {
+    openModal(`
+      <div class="modal-head"><h3>${escapeHtml(title)}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body"><p style="margin:0;">${body}</p></div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+      <button class="btn ${danger ? "danger" : ""}" id="m_yes">${danger ? T("del") : T("save_changes")}</button></div>`);
+    $("m_yes").addEventListener("click", onYes);
+  }
+
+  // ---------- EVENTS ----------
+  $("nav").addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-view]"); if (!a) return;
+    e.preventDefault(); navigate(a.dataset.view); closeSidebar();
+  });
+  function navigate(view) {
+    currentView = view;
+    document.querySelectorAll(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
+    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
+    const map = {
+      overview: ["t_overview", "s_overview"], students: ["t_students", "s_students"],
+      internships: ["t_internships", isAdmin ? "s_intern_admin" : "s_intern_dept"],
+      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", "s_reports"]
+    };
+    const m = map[view] || ["", ""];
+    $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]);
+    refresh();
+  }
+
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t.closest("[data-close]")) { closeModal(); return; }
+    const editS = t.closest("[data-edit-student]");
+    if (editS) { studentModal(students.find((s) => s.id === editS.dataset.editStudent)); return; }
+    const delS = t.closest("[data-del-student]");
+    if (delS) {
+      const s = students.find((x) => x.id === delS.dataset.delStudent);
+      confirmModal(T("m_delete_student"), T("msg_delete_student", { n: escapeHtml(s.name) }), async () => {
+        try {
+          const batch = db.batch();
+          batch.delete(db.collection("students").doc(s.id));
+          departments.forEach((d) => batch.delete(db.collection("internships").doc(key(s.id, d))));
+          await batch.commit(); closeModal(); toast(T("to_student_deleted"), "ok");
+        } catch (err) { showModalErr(T("err_delete") + err.message); }
+      }, true);
+      return;
+    }
+    const mark = t.closest("[data-mark]");
+    if (mark) { markModal(students.find((s) => s.id === mark.dataset.mark)); return; }
+    const delD = t.closest("[data-del-dept]");
+    if (delD) {
+      const name = delD.dataset.delDept;
+      confirmModal(T("m_remove_dept"), T("msg_remove_dept", { d: escapeHtml(name) }), async () => {
+        try { await db.collection("departments").doc(slug(name)).delete(); closeModal(); toast(T("to_dept_removed"), "ok"); }
+        catch (err) { showModalErr(T("err_remove") + err.message); }
+      }, true);
+      return;
+    }
+    const delA = t.closest("[data-del-account]");
+    if (delA) {
+      confirmModal(T("m_remove_account"), T("msg_remove_account"), async () => {
+        try { await db.collection("users").doc(delA.dataset.delAccount).delete(); closeModal(); toast(T("to_acc_removed"), "ok"); }
+        catch (err) { showModalErr(T("err_remove") + err.message); }
+      }, true);
+      return;
+    }
+  });
+
+  $("addStudentBtn").addEventListener("click", () => studentModal(null));
+  $("addDeptBtn").addEventListener("click", deptModal);
+  $("addAccountBtn").addEventListener("click", accountModal);
+  $("printBtn").addEventListener("click", printReport);
+  $("csvBtn").addEventListener("click", exportCsv);
+  $("logoutBtn").addEventListener("click", async () => { unsub.forEach((u) => u && u()); await auth.signOut(); window.location.replace("index.html"); });
+
+  $("studentSearch").addEventListener("input", renderStudents);
+  $("studentTimeFilter").addEventListener("change", renderStudents);
+  $("internSearch").addEventListener("input", renderInternships);
+  $("internStatusFilter").addEventListener("change", renderInternships);
+  $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
+  $("reportDeptFilter").addEventListener("change", renderReport);
+
+  function populateDeptSelectors() {
+    if (!isAdmin) return;
+    const idf = $("internDeptFilter"), rdf = $("reportDeptFilter");
+    if (idf) {
+      const cur = idf.value || activeDept;
+      idf.innerHTML = departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("");
+      if (!activeDept && departments.length) activeDept = departments[0];
+      idf.value = [...idf.options].some((o) => o.value === activeDept) ? activeDept : (departments[0] || "");
+    }
+    if (rdf) {
+      const cur = rdf.value;
+      rdf.innerHTML = `<option value="">${T("all_departments")}</option>` + departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("");
+      if ([...rdf.options].some((o) => o.value === cur)) rdf.value = cur;
+    }
+  }
+
+  function closeSidebar() { $("sidebar").classList.remove("open"); $("scrim").classList.remove("show"); }
+  $("menuBtn").addEventListener("click", () => { $("sidebar").classList.add("open"); $("scrim").classList.add("show"); });
+  $("scrim").addEventListener("click", closeSidebar);
+})();

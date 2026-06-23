@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>First-time setup — IMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <button id="langToggle" class="lang-btn lang-float">English</button>
+
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <div class="brand-row"><div class="emblem">IM</div><b>Internship Management System</b></div>
+      <div>
+        <div class="eyebrow" data-i18n="setup_eyebrow">One-time setup</div>
+        <h1 data-i18n="setup_hero_t">Create the first administrator.</h1>
+        <p data-i18n="setup_hero_text">Run this once to create the Super Admin sign-in.</p>
+      </div>
+      <div class="foot" data-i18n="setup_foot">Use only during initial setup</div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-card">
+        <h2 data-i18n="setup_title">Create Super Admin</h2>
+        <p class="lead" data-i18n="setup_lead">This creates the authentication account only.</p>
+
+        <div id="alert" class="alert err"></div>
+        <div id="done" class="alert ok"></div>
+
+        <form id="setupForm">
+          <div class="field">
+            <label for="username" data-i18n="f_admin_username">Admin username</label>
+            <input id="username" type="text" value="admin" placeholder="admin" required />
+            <div class="hint" id="hintLine">Signs in as <span id="emailPreview">admin@ims.local</span></div>
+          </div>
+          <div class="field">
+            <label for="password" data-i18n="f_password">Password</label>
+            <input id="password" type="text" data-i18n-ph="ph_pass6" placeholder="At least 6 characters" required />
+          </div>
+          <button id="submitBtn" type="submit" class="btn block" data-i18n="btn_create_admin">Create administrator</button>
+        </form>
+
+        <div id="next" style="display:none;margin-top:22px;">
+          <div class="card"><div class="card-body">
+            <h3 style="font-size:15px;margin-bottom:8px;" data-i18n="final_step_t">Final step — assign the admin role</h3>
+            <ol class="muted" style="margin:0;padding-inline-start:18px;font-size:13.5px;line-height:1.7;">
+              <li id="fs1"></li><li id="fs2"></li><li id="fs3"></li>
+              <li><a href="index.html" id="fs4link"></a></li>
+            </ol>
+          </div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const form = document.getElementById("setupForm");
+    const alertBox = document.getElementById("alert");
+    const doneBox = document.getElementById("done");
+    const btn = document.getElementById("submitBtn");
+    const userInput = document.getElementById("username");
+    const preview = document.getElementById("emailPreview");
+
+    function refreshHint() {
+      const email = `${(userInput.value.trim().toLowerCase() || "admin")}@${LOGIN_DOMAIN}`;
+      document.getElementById("hintLine").innerHTML = t("admin_signin_hint", { e: `<span id="emailPreview">${email}</span>` });
+    }
+    userInput.addEventListener("input", refreshHint);
+    window.onLangChange = refreshHint;
+    refreshHint();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertBox.classList.remove("show");
+      const username = userInput.value.trim().toLowerCase();
+      const password = document.getElementById("password").value;
+      if (password.length < 6) { alertBox.textContent = t("err_pass6"); alertBox.classList.add("show"); return; }
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span> ' + t("creating");
+      try {
+        const cred = await auth.createUserWithEmailAndPassword(usernameToEmail(username), password);
+        try { await db.collection("users").doc(cred.user.uid).set({ username, role: "admin", department: "" }); } catch (_) {}
+        document.getElementById("fs1").textContent = t("fs1");
+        document.getElementById("fs2").textContent = t("fs2", { uid: cred.user.uid });
+        document.getElementById("fs3").textContent = t("fs3", { u: username });
+        document.getElementById("fs4link").textContent = t("fs4");
+        document.getElementById("next").style.display = "block";
+        doneBox.textContent = t("setup_done"); doneBox.classList.add("show");
+        form.style.display = "none";
+        await auth.signOut();
+      } catch (err) {
+        const msg = err.code === "auth/email-already-in-use" ? t("setup_err_exists") :
+                    err.code === "auth/weak-password" ? t("err_pass_weak") : (t("err_create") + err.message);
+        alertBox.textContent = msg; alertBox.classList.add("show");
+      } finally { btn.disabled = false; btn.textContent = t("btn_create_admin"); }
+    });
+  </script>
+</body>
+</html>
