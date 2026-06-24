@@ -7,8 +7,8 @@
 
   const STR = {
     en: {
-      app_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
-      org_top: "سەرۆکایەتی زانکۆی پۆلیتەکنیکی سلێمانی", org_sub: "پەیمانگای تەکنیکی دوکان", sys_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
+      app_name: "Student Clearance Management System",
+      org_top: "Sulaimani Polytechnic University", org_sub: "Dukan Technical Institute", sys_name: "Student Clearance Management System",
       super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} dept.",
       sign_out: "Sign out", cancel: "Cancel", you: "you",
       lang_label: "کوردی",
@@ -35,7 +35,7 @@
       hero_title: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       hero_text: "One central record for student placements. Each department confirms its own completion status, while administrators see the full picture.",
       hero_foot: "Secure access · Role-based permissions",
-      brand_sub: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
+      brand_sub: "Student Clearance Management System",
       err_invalid: "Incorrect username or password.", err_notfound: "No account found with that username.",
       err_toomany: "Too many attempts. Try again in a moment.", err_norole: "This account has no role assigned yet. Contact your administrator.",
       err_generic: "Could not sign in. Please try again.", signing_in: "Signing in…",
