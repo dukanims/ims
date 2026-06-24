@@ -45,8 +45,8 @@
   }
   function updateRoleText() {
     $("sideName").textContent = me.username;
-    $("sideRole").textContent = isAdmin ? T("administrator") : me.department;
-    $("roleChip").textContent = isAdmin ? T("super_admin") : T("department_role", { d: me.department });
+    $("sideRole").textContent = isAdmin ? T("administrator") : deptLabel(me.department);
+    $("roleChip").textContent = isAdmin ? T("super_admin") : T("department_role", { d: deptLabel(me.department) });
   }
 
   // ---------- LISTENERS ----------
@@ -84,15 +84,29 @@
   }
 
   // ---------- HELPERS ----------
-  function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function slug(s) {
+    const out = String(s).trim().replace(/[\/\\\s]+/g, "-").replace(/^-+|-+$/g, "");
+    if (out) return out;
+    let h = 0; const str = String(s);
+    for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+    return "d-" + Math.abs(h).toString(36);
+  }
   function key(id, dept) { return `${id}__${slug(dept)}`; }
   function statusOf(id, dept) { const r = internMap[key(id, dept)]; return r ? r.status : "Pending"; }
   function noteOf(id, dept) { const r = internMap[key(id, dept)]; return r ? (r.note || "") : ""; }
   function statusLabel(s) { return s === "Completed" ? T("s_completed") : s === "Not Completed" ? T("s_notcompleted") : T("s_pending"); }
-  const STAGES = ["Stage 1", "Stage 2", "Stage 3", "Stage 4"];
+  const STAGES = ["Stage 1", "Stage 2"];
   const STAGE_KEY = { "Stage 1": "stage_1", "Stage 2": "stage_2", "Stage 3": "stage_3", "Stage 4": "stage_4" };
   function stageLabel(s) { return STAGE_KEY[s] ? T(STAGE_KEY[s]) : (s || "—"); }
   function timeLabel(x) { return x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : (x || "—"); }
+
+  const MAJORS = ["IT", "Business Administration", "Accounting", "Banking", "Public Relations"];
+  const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
+  function majorLabel(s) { return MAJOR_KEY[s] ? T(MAJOR_KEY[s]) : (s || "—"); }
+
+  const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records" };
+  function deptLabel(d) { return DEPT_KEY[d] ? T(DEPT_KEY[d]) : (d || "—"); }
+
   async function quickSet(studentDocId, dept, status) {
     const s = students.find((x) => x.id === studentDocId); if (!s) return;
     const rec = {
@@ -164,7 +178,7 @@
       const rows = departments.map((d) => {
         let done = 0, no = 0, pend = 0;
         students.forEach((s) => { const st = statusOf(s.id, d); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
-        return `<tr><td class="name">${escapeHtml(d)}</td><td class="cell-num">${done}</td><td class="cell-num">${no}</td><td class="cell-num">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
+        return `<tr><td class="name">${escapeHtml(deptLabel(d))}</td><td class="cell-num">${done}</td><td class="cell-num">${no}</td><td class="cell-num">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
       }).join("");
       host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_completed")}</th><th>${T("c_notcompleted")}</th><th>${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     } else {
@@ -174,7 +188,7 @@
         .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
       const rows = recent.map(({ s, r }) =>
-        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
+        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
       host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
   }
@@ -190,7 +204,7 @@
     const rows = list.map((s) => `<tr>
       <td><div class="name">${escapeHtml(s.name)}</div></td>
       <td class="id">${escapeHtml(s.studentId)}</td>
-      <td>${escapeHtml(s.major || "—")}</td>
+      <td>${escapeHtml(majorLabel(s.major))}</td>
       <td>${escapeHtml(stageLabel(s.stage))}</td>
       <td><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
       <td><div class="row-actions">
@@ -202,8 +216,8 @@
 
   function renderInternships() {
     const dept = isAdmin ? activeDept : me.department;
-    if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: dept }) : T("h_intern_records"); }
-    else { $("internHeading").textContent = T("h_mydept_status", { d: me.department }); }
+    if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
+    else { $("internHeading").textContent = T("h_mydept_status", { d: deptLabel(me.department) }); }
     const host = $("internTable");
     if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), isAdmin ? T("e_nostud_admin_s") : T("e_nostud_dept_s")); return; }
@@ -218,7 +232,7 @@
       const r = internMap[key(s.id, dept)];
       const cur = statusOf(s.id, dept);
       return `<tr>
-        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${escapeHtml(s.major || "")}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
+        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${s.major ? escapeHtml(majorLabel(s.major)) : ""}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
         <td class="id">${escapeHtml(s.studentId)}</td>
         <td>${statusTag(cur)}</td>
         <td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
@@ -238,7 +252,7 @@
     if (!departments.length) { host.innerHTML = emptyState(T("e_nodept2_t"), T("e_nodept2_s")); return; }
     const rows = departments.map((d) => {
       const linked = accounts.filter((a) => a.role === "department" && a.department === d).length;
-      return `<tr><td class="name">${escapeHtml(d)}</td>
+      return `<tr><td class="name">${escapeHtml(deptLabel(d))}</td>
         <td>${linked ? `<span class="chip">${T("n_accounts", { n: linked })}</span>` : `<span class="muted">${T("no_account")}</span>`}</td>
         <td><div class="row-actions"><button class="btn danger sm" data-del-dept="${escapeHtml(d)}">${T("remove")}</button></div></td></tr>`;
     }).join("");
@@ -250,7 +264,7 @@
     if (!accounts.length) { host.innerHTML = emptyState(T("e_noacc_t"), T("e_noacc_s")); return; }
     const rows = accounts.slice().sort((a, b) => (a.role || "").localeCompare(b.role || "")).map((a) => `<tr>
       <td class="name">${escapeHtml(a.username)}</td>
-      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : `<span class="chip">${escapeHtml(a.department || "—")}</span>`}</td>
+      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : `<span class="chip">${a.department ? escapeHtml(deptLabel(a.department)) : "—"}</span>`}</td>
       <td><div class="row-actions">${a.uid === me.uid ? `<span class="muted" style="font-size:12px;">${T("you")}</span>` : `<button class="btn danger sm" data-del-account="${a.uid}">${T("remove")}</button>`}</div></td>
     </tr>`).join("");
     host.innerHTML = `<table><thead><tr><th>${T("c_username")}</th><th>${T("c_role")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -259,21 +273,26 @@
   function renderReport() {
     const host = $("reportTable");
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
-    $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: filterDept }) : T("h_report_full");
+    const sf = ($("reportStatusFilter") || {}).value || "";
+    $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), T("e_norep_s")); return; }
     if (isAdmin && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
-        departments.map((d) => `<th class="matrix-cell">${escapeHtml(d)}</th>`).join("");
-      const rows = students.map((s) => {
+        departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
+      const list = sf ? students.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : students;
+      if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
+      const rows = list.map((s) => {
         const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
-        return `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>${cells}</tr>`;
+        return `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>${cells}</tr>`;
       }).join("");
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
-      const rows = students.map((s) => `<tr>
+      const list = sf ? students.filter((s) => statusOf(s.id, dept) === sf) : students;
+      if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
+      const rows = list.map((s) => `<tr>
         <td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td>
-        <td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>
+        <td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>
         <td>${statusTag(statusOf(s.id, dept))}</td><td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td></tr>`).join("");
       host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
@@ -284,12 +303,12 @@
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     let header, rows;
     if (isAdmin && !filterDept) {
-      header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments];
-      rows = students.map((s) => [s.name, s.studentId, s.major, stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+      header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments.map(deptLabel)];
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
     } else {
       const dept = filterDept;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
-      rows = students.map((s) => [s.name, s.studentId, s.major, stageLabel(s.stage), timeLabel(s.time), dept, statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
     }
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -301,7 +320,7 @@
   function csvCell(v) { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
   function printReport() {
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
-    $("printHead").innerHTML = `<h1>${escapeHtml(filterDept ? T("h_report_dept", { d: filterDept }) : T("h_report_full"))}</h1>
+    $("printHead").innerHTML = `<h1>${escapeHtml(filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"))}</h1>
       <div class="meta">${escapeHtml(T("brand_sub"))} · ${new Date().toLocaleString()}</div>`;
     window.print();
   }
@@ -321,7 +340,12 @@
         <div class="field"><label>${T("f_fullname")}</label><input id="m_name" value="${escapeHtml(s.name || "")}" placeholder="${escapeHtml(T("ph_name"))}" /></div>
         <div class="grid-2">
           <div class="field"><label>${T("f_studentid")}</label><input id="m_sid" value="${escapeHtml(s.studentId || "")}" placeholder="${escapeHtml(T("ph_sid"))}" /></div>
-          <div class="field"><label>${T("f_major")}</label><input id="m_major" value="${escapeHtml(s.major || "")}" placeholder="${escapeHtml(T("ph_major"))}" /></div>
+          <div class="field"><label>${T("f_major")}</label>
+            <select id="m_major">
+              <option value="" ${!s.major ? "selected" : ""}>${escapeHtml(T("ph_major_select"))}</option>
+              ${MAJORS.map((mj) => `<option value="${escapeHtml(mj)}" ${s.major === mj ? "selected" : ""}>${escapeHtml(majorLabel(mj))}</option>`).join("")}
+              ${s.major && !MAJORS.includes(s.major) ? `<option value="${escapeHtml(s.major)}" selected>${escapeHtml(s.major)}</option>` : ""}
+            </select></div>
         </div>
         <div class="grid-2">
           <div class="field"><label>${T("f_stage")}</label>
@@ -363,7 +387,7 @@
       <div class="modal-body">
         <div id="mErr" class="alert err"></div>
         <p class="muted" style="margin-top:0;"><b style="color:var(--ink);">${escapeHtml(student.name)}</b> · ${escapeHtml(student.studentId)}<br/>
-          ${T("l_department")}: <span class="chip">${escapeHtml(dept)}</span></p>
+          ${T("l_department")}: <span class="chip">${escapeHtml(deptLabel(dept))}</span></p>
         <div class="field"><label>${T("f_status")}</label><div class="pills">
           ${STATUSES.map((st) => `<label><input type="radio" name="m_status" value="${st}" ${cur === st ? "checked" : ""}/> ${statusLabel(st)}</label>`).join("")}
         </div></div>
@@ -408,7 +432,7 @@
           <label><input type="radio" name="m_role" value="admin"/> ${T("role_admin")}</label>
         </div></div>
         <div class="field" id="deptWrap"><label>${T("f_dept")}</label>
-          <select id="m_acc_dept">${departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("")}</select></div>
+          <select id="m_acc_dept">${departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(deptLabel(d))}</option>`).join("")}</select></div>
         <div class="field"><label>${T("c_username")}</label><input id="m_user" placeholder="finance" />
           <div class="hint">${T("signin_becomes", { e: `<span id="emailPreview">finance@${LOGIN_DOMAIN}</span>` })}</div></div>
         <div class="field"><label>${T("f_password")}</label><input id="m_pass" type="text" placeholder="${escapeHtml(T("ph_pass6"))}" /></div>
@@ -528,19 +552,20 @@
   $("internStatusFilter").addEventListener("change", renderInternships);
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
   $("reportDeptFilter").addEventListener("change", renderReport);
+  { const rsf = $("reportStatusFilter"); if (rsf) rsf.addEventListener("change", renderReport); }
 
   function populateDeptSelectors() {
     if (!isAdmin) return;
     const idf = $("internDeptFilter"), rdf = $("reportDeptFilter");
     if (idf) {
       const cur = idf.value || activeDept;
-      idf.innerHTML = departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("");
+      idf.innerHTML = departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(deptLabel(d))}</option>`).join("");
       if (!activeDept && departments.length) activeDept = departments[0];
       idf.value = [...idf.options].some((o) => o.value === activeDept) ? activeDept : (departments[0] || "");
     }
     if (rdf) {
       const cur = rdf.value;
-      rdf.innerHTML = `<option value="">${T("all_departments")}</option>` + departments.map((d) => `<option>${escapeHtml(d)}</option>`).join("");
+      rdf.innerHTML = `<option value="">${T("all_departments")}</option>` + departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(deptLabel(d))}</option>`).join("");
       if ([...rdf.options].some((o) => o.value === cur)) rdf.value = cur;
     }
   }

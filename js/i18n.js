@@ -90,6 +90,10 @@
       f_stage: "Stage", f_studytime: "Study time",
       stage_1: "Stage 1", stage_2: "Stage 2", stage_3: "Stage 3", stage_4: "Stage 4",
       ph_stage_select: "Select stage", btn_note: "Note", quick_hint: "Click to set status",
+      ph_major_select: "Select department",
+      major_it: "IT Department", major_admin: "Business Administration", major_accounting: "Accounting",
+      major_bank: "Banking", major_pr: "Public Relations",
+      dept_library: "Library", dept_finance: "Finance", dept_warehouse: "Warehouse", dept_records: "Records",
       ph_name: "e.g. Sara Ahmed", ph_sid: "e.g. 2023-1045", ph_major: "e.g. Accounting", ph_stage: "e.g. Stage 3",
       save_changes: "Save changes", btn_add_student: "Add student", err_name_required: "Full name and Student ID are required.",
 
@@ -212,6 +216,10 @@
       f_stage: "قۆناغ", f_studytime: "کاتی خوێندن",
       stage_1: "قۆناغی یەکەم", stage_2: "قۆناغی دووەم", stage_3: "قۆناغی سێیەم", stage_4: "قۆناغی چوارەم",
       ph_stage_select: "قۆناغ هەڵبژێرە", btn_note: "تێبینی", quick_hint: "کلیک بکە بۆ دیاریکردنی دۆخ",
+      ph_major_select: "بەش هەڵبژێرە",
+      major_it: "بەشی ئایتی", major_admin: "بەشی کارگێڕی کار", major_accounting: "بەشی ژمێریاری",
+      major_bank: "بەشی بانک", major_pr: "بەشی پەیوەندییە گشتییەکان",
+      dept_library: "کتێبخانە", dept_finance: "دارایی", dept_warehouse: "گەنجینە", dept_records: "تۆمارگا",
       ph_name: "وەک سارا ئەحمەد", ph_sid: "وەک ٢٠٢٣-١٠٤٥", ph_major: "وەک ژمێریاری", ph_stage: "وەک قۆناغی ٣",
       save_changes: "پاشەکەوتی گۆڕانکارییەکان", btn_add_student: "زیادکردنی خوێندکار", err_name_required: "ناوی تەواو و ناسنامەی خوێندکار پێویستن.",
 

@@ -19,7 +19,8 @@ const firebaseConfig = {
 const LOGIN_DOMAIN = "ims.local";
 
 // Default departments the system seeds with.
-const DEFAULT_DEPARTMENTS = ["Finance", "Library", "Warehouse", "Internal Affairs"];
+// Default departments (hôbes) that do clearance — Kurdish names.
+const DEFAULT_DEPARTMENTS = ["کتێبخانە", "دارایی", "گەنجینە", "تۆمارگا"];
 
 // Initialize Firebase (compat SDK, loaded via CDN in the HTML files)
 firebase.initializeApp(firebaseConfig);
