@@ -469,8 +469,19 @@
     a.href = URL.createObjectURL(blob); a.download = "IMS_students_template.csv"; a.click(); URL.revokeObjectURL(a.href);
   }
   async function importStudentsFromFile(file) {
-    const text = await file.text();
-    let rows = parseCsv(text);
+    const name = (file.name || "").toLowerCase();
+    let rows;
+    if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+      if (typeof XLSX === "undefined") { toast(T("err_save") + "xlsx", "err"); return; }
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }).map((r) => r.map((c) => String(c)));
+      rows = rows.filter((r) => r.some((c) => String(c).trim() !== ""));
+    } else {
+      const text = await file.text();
+      rows = parseCsv(text);
+    }
     if (!rows.length) { toast(T("import_none"), "err"); return; }
     // drop header row if first cell isn't a plausible name+number pair (detect by header keywords)
     const first = rows[0].map((c) => String(c).toLowerCase());
@@ -498,7 +509,7 @@
         <div id="mErr" class="alert err"></div>
         <p class="muted" style="margin-top:0;font-size:13.5px;">${escapeHtml(T("import_help"))}</p>
         <button class="btn ghost" id="tplBtn" style="margin-bottom:14px;">${T("download_template")}</button>
-        <div class="field"><label>${T("import_pick")}</label><input type="file" id="impFile" accept=".csv,text/csv" /></div>
+        <div class="field"><label>${T("import_pick")}</label><input type="file" id="impFile" accept=".csv,.xlsx,.xls,text/csv" /></div>
       </div>
       <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
         <button class="btn" id="impGo">${T("btn_import")}</button></div>`);

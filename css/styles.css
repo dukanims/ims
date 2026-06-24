@@ -461,11 +461,13 @@ td .name { font-weight: 600; color: var(--ink); }
 .sidebar, .side-head, .side-head *, .nav, .nav-label, .nav a,
 .topbar, .topbar h2, .topbar .sub, .emblem, .eyebrow, .eyebrow-l,
 thead th, .stat .k, .card-head h3, .tag, .chip, .btn, .lang-btn,
-.menu-btn, .side-user, .stat .v, .nav-label, .modal-head h3 {
+.menu-btn, .side-user, .stat .v, .nav-label, .modal-head h3,
+.section-head h2, .section-head .eyebrow-l, .card-head, label, .hint, .lead, .sub {
   -webkit-user-select: none; -moz-user-select: none; user-select: none;
 }
 .sidebar, .side-head, .nav-label, .stat, .stat .k, .stat .v,
-.topbar h2, .topbar .sub, .card-head h3, .eyebrow, .eyebrow-l, thead th {
+.topbar h2, .topbar .sub, .card-head h3, .eyebrow, .eyebrow-l, thead th,
+.section-head h2, label, .hint, .lead {
   cursor: default;
 }
 .nav a, .btn, .lang-btn, .menu-btn, .x, [data-quick], [data-mark],
