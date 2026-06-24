@@ -270,11 +270,73 @@
     host.innerHTML = `<table><thead><tr><th>${T("c_username")}</th><th>${T("c_role")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
+  function legendRow(color, label, val) {
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <span style="width:12px;height:12px;border-radius:3px;background:${color};display:inline-block;"></span>
+      <b style="color:var(--ink);">${val}</b> <span class="muted">${escapeHtml(label)}</span></div>`;
+  }
+  function donutSvg(parts) {
+    const total = parts.reduce((a, p) => a + p.value, 0) || 1;
+    const r = 52, c = 2 * Math.PI * r; let offset = 0;
+    const segs = parts.map((p) => {
+      const len = p.value / total * c;
+      const seg = `<circle cx="70" cy="70" r="${r}" fill="none" style="stroke:${p.color}" stroke-width="20" stroke-dasharray="${len.toFixed(2)} ${(c - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 70 70)"/>`;
+      offset += len; return seg;
+    }).join("");
+    return `<svg viewBox="0 0 140 140" width="140" height="140" style="flex:none;">${segs}
+      <text x="70" y="66" text-anchor="middle" style="font-family:var(--display);font-size:24px;font-weight:700;fill:var(--ink);">${total}</text>
+      <text x="70" y="86" text-anchor="middle" style="font-size:10px;fill:var(--muted);">${escapeHtml(T("st_total_slots"))}</text></svg>`;
+  }
+  function renderAnalytics(filterDept) {
+    const host = $("reportAnalytics");
+    if (!host) return;
+    if (!students.length) { host.innerHTML = ""; return; }
+
+    if (isAdmin && !filterDept) {
+      let cleared = 0;
+      students.forEach((s) => { if (departments.length && departments.every((d) => statusOf(s.id, d) === "Completed")) cleared++; });
+      const remaining = students.length - cleared;
+      let c = 0, n = 0, p = 0;
+      students.forEach((s) => departments.forEach((d) => { const st = statusOf(s.id, d); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; }));
+
+      const cards = `<div class="stat-grid" style="margin-bottom:16px;">
+        ${stat(T("an_cleared"), cleared)}${stat(T("an_remaining"), remaining)}${stat(T("st_completed"), c)}${stat(T("st_pending"), p)}</div>`;
+
+      const donutCard = `<div class="card"><div class="card-head"><h3>${T("an_overall")}</h3></div>
+        <div class="card-body" style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
+          ${donutSvg([{ value: c, color: "var(--ok)" }, { value: n, color: "var(--no)" }, { value: p, color: "var(--pending)" }])}
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            ${legendRow("var(--ok)", T("s_completed"), c)}
+            ${legendRow("var(--no)", T("s_notcompleted"), n)}
+            ${legendRow("var(--pending)", T("s_pending"), p)}
+          </div></div></div>`;
+
+      const bars = departments.map((d) => {
+        let dc = 0; students.forEach((s) => { if (statusOf(s.id, d) === "Completed") dc++; });
+        const pct = students.length ? Math.round(dc / students.length * 100) : 0;
+        return `<div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+            <span class="name">${escapeHtml(deptLabel(d))}</span><span class="muted">${dc}/${students.length}</span></div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:999px;height:10px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:var(--ok);"></div></div></div>`;
+      }).join("");
+      const barCard = `<div class="card"><div class="card-head"><h3>${T("an_by_dept")}</h3></div><div class="card-body">${bars}</div></div>`;
+
+      host.innerHTML = cards + `<div class="grid-2" style="align-items:start;margin-bottom:22px;">${donutCard}${barCard}</div>`;
+    } else {
+      const dept = filterDept; let c = 0, n = 0, p = 0;
+      students.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; });
+      host.innerHTML = `<div class="stat-grid" style="margin-bottom:18px;">
+        ${stat(T("st_completed"), c)}${stat(T("st_notcompleted"), n)}${stat(T("st_pending"), p)}${stat(T("st_students"), students.length)}</div>`;
+    }
+  }
+
   function renderReport() {
     const host = $("reportTable");
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
     $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
+    renderAnalytics(filterDept);
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), T("e_norep_s")); return; }
     if (isAdmin && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +

@@ -94,6 +94,8 @@
       major_it: "IT Department", major_admin: "Business Administration", major_accounting: "Accounting",
       major_bank: "Banking", major_pr: "Public Relations",
       dept_library: "Library", dept_finance: "Finance", dept_warehouse: "Warehouse", dept_records: "Records",
+      an_overall: "Overall status", an_by_dept: "Completed by department",
+      an_cleared: "Fully cleared students", an_remaining: "Students remaining",
       ph_name: "e.g. Sara Ahmed", ph_sid: "e.g. 2023-1045", ph_major: "e.g. Accounting", ph_stage: "e.g. Stage 3",
       save_changes: "Save changes", btn_add_student: "Add student", err_name_required: "Full name and Student ID are required.",
 
@@ -220,6 +222,8 @@
       major_it: "بەشی ئایتی", major_admin: "بەشی کارگێڕی کار", major_accounting: "بەشی ژمێریاری",
       major_bank: "بەشی بانک", major_pr: "بەشی پەیوەندییە گشتییەکان",
       dept_library: "کتێبخانە", dept_finance: "دارایی", dept_warehouse: "گەنجینە", dept_records: "تۆمارگا",
+      an_overall: "دۆخی گشتی", an_by_dept: "تەواوبوو بەپێی هۆبە",
+      an_cleared: "خوێندکاری تەواو ئەستۆپاک", an_remaining: "خوێندکاری ماوە",
       ph_name: "وەک سارا ئەحمەد", ph_sid: "وەک ٢٠٢٣-١٠٤٥", ph_major: "وەک ژمێریاری", ph_stage: "وەک قۆناغی ٣",
       save_changes: "پاشەکەوتی گۆڕانکارییەکان", btn_add_student: "زیادکردنی خوێندکار", err_name_required: "ناوی تەواو و ناسنامەی خوێندکار پێویستن.",
 
