@@ -343,4 +343,13 @@
     const btn = document.getElementById("langToggle");
     if (btn) btn.addEventListener("click", () => window.toggleLang());
   });
+
+  // Prevent accidental browser zoom (Ctrl+wheel / pinch / Ctrl +,-,0)
+  // while keeping normal scrolling intact.
+  window.addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "0"].indexOf(e.key) !== -1) e.preventDefault();
+  });
+  ["gesturestart", "gesturechange", "gestureend"].forEach((t) =>
+    window.addEventListener(t, (e) => e.preventDefault()));
 })();
