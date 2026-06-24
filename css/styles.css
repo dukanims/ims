@@ -476,3 +476,11 @@ thead th, .stat .k, .card-head h3, .tag, .chip, .btn, .lang-btn,
 }
 /* table body text stays selectable so data can be copied */
 tbody td, .note-text, .modal-body p, input, textarea, select { -webkit-user-select: text; user-select: text; }
+
+/* No text caret on auth (login) page chrome */
+.auth-aside, .auth-aside *, .auth-card h2, .auth-card .lead, .auth-card label,
+.brand-row, .brand-row *, .lang-btn {
+  -webkit-user-select: none; -moz-user-select: none; user-select: none; cursor: default;
+}
+.auth-card input { cursor: text; -webkit-user-select: text; user-select: text; }
+.lang-btn { cursor: pointer; }
