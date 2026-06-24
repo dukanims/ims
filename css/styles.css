@@ -96,18 +96,21 @@ button { font-family: inherit; cursor: pointer; }
   border: 1.5px solid rgba(194,150,47,.25);
   box-shadow: 0 0 0 28px rgba(255,255,255,.03);
 }
-.auth-aside .brand-row { display: flex; align-items: center; gap: 14px; }
-.auth-aside .brand-row b { font-family: var(--display); font-size: 20px; color: #fff; line-height: 1.5; }
-.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 16px !important; }
+.auth-aside .brand-row { display: flex; align-items: center; gap: 16px; }
+.auth-aside .brand-row b { font-size: 24px; color: #fff; line-height: 1.5; }
+.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 19px !important; }
 .auth-aside .hero-mid { margin: auto 0; position: relative; z-index: 1; }
 .auth-aside .hero-kicker {
   display: inline-block; font-family: var(--display); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
 }
 .auth-aside .hero-accent {
-  width: 110px; height: 7px; border-radius: 999px; margin-bottom: 28px;
+  width: 140px; height: 9px; border-radius: 999px; margin-bottom: 30px;
   background: linear-gradient(90deg, var(--gold), rgba(194,150,47,.15));
 }
+.auth-aside .emblem { width: 58px; height: 58px; font-size: 15px; border-radius: 15px; }
+[dir="rtl"] .auth-aside .brand-row b,
+[dir="rtl"] .auth-aside .brand-row b span { font-family: "Noto Kufi Arabic", "Segoe UI", Tahoma, sans-serif; }
 .auth-aside h1 {
   color: #fff; font-size: clamp(36px, 4.2vw, 54px); line-height: 1.2;
   margin: 0 0 20px; max-width: 18ch; font-weight: 700; letter-spacing: -0.005em;
