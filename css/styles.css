@@ -97,15 +97,15 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 0 0 28px rgba(255,255,255,.03);
 }
 .auth-aside .brand-row { display: flex; align-items: center; gap: 16px; }
-.auth-aside .brand-row b { font-size: 24px; color: #fff; line-height: 1.5; }
-.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 19px !important; }
+.auth-aside .brand-row b { font-size: 20px; color: #fff; line-height: 1.5; white-space: nowrap; }
+.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 17px !important; white-space: nowrap; }
 .auth-aside .hero-mid { margin: auto 0; position: relative; z-index: 1; }
 .auth-aside .hero-kicker {
   display: inline-block; font-family: var(--display); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
 }
 .auth-aside .hero-accent {
-  width: 140px; height: 9px; border-radius: 999px; margin-bottom: 30px;
+  width: 180px; height: 12px; border-radius: 999px; margin-bottom: 32px;
   background: linear-gradient(90deg, var(--gold), rgba(194,150,47,.15));
 }
 .auth-aside .emblem { width: 58px; height: 58px; font-size: 15px; border-radius: 15px; }
