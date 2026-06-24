@@ -52,7 +52,7 @@
       c_status: "Status", c_note: "Note", c_updated: "Updated",
       pct_of: "{p}% of {t}",
       e_nodepts_t: "No departments yet", e_nodepts_s: "Add one under Departments & Accounts.",
-      e_noupd_t: "No updates yet", e_noupd_s: "Mark internship statuses from the My Department tab.",
+      e_noupd_t: "No updates yet", e_noupd_s: "",
 
       // students
       eb_registry: "Student Registry", h_all_students: "All students", add_student: "+ Add student",
@@ -95,7 +95,7 @@
       ph_major_select: "Select department", all_majors: "All departments",
       major_it: "IT Department", major_admin: "Business Administration", major_accounting: "Accounting",
       major_bank: "Banking", major_pr: "Public Relations",
-      dept_library: "Library", dept_finance: "Finance", dept_warehouse: "Warehouse", dept_records: "Records",
+      dept_library: "Library", dept_finance: "Finance", dept_warehouse: "Treasury", dept_records: "Records Department", dept_internal: "Internal Affairs Department",
       an_overall: "Overall status", an_by_dept: "Completed by department",
       an_cleared: "Fully cleared students", an_remaining: "Students remaining",
       data_tools: "Data & backup", data_tools_hint: "Download a full backup of all data, or clear all students and records to start fresh.",
@@ -200,7 +200,7 @@
       c_status: "دۆخ", c_note: "تێبینی", c_updated: "نوێکراوەتەوە",
       pct_of: "{p}٪ لە {t}",
       e_nodepts_t: "هێشتا هیچ بەشێک نییە", e_nodepts_s: "لە بەشی «بەشەکان و هەژمارەکان» یەکێک زیاد بکە.",
-      e_noupd_t: "هێشتا هیچ نوێکردنەوەیەک نییە", e_noupd_s: "لە تابی «بەشەکەم» دۆخی ڕاهێنان دیاری بکە.",
+      e_noupd_t: "هێشتا هیچ نوێکردنەوەیەک نییە", e_noupd_s: "",
 
       eb_registry: "تۆماری خوێندکاران", h_all_students: "هەموو خوێندکاران", add_student: "+ زیادکردنی خوێندکار",
       ph_search_student: "گەڕان بە ناو یان ناسنامە…", all_times: "هەموو کاتەکانی خوێندن", morning: "بەیانیان", evening: "ئێواران", parallel: "پارالێڵ",
@@ -238,7 +238,7 @@
       ph_major_select: "بەش هەڵبژێرە", all_majors: "هەموو بەشەکان",
       major_it: "بەشی ئایتی", major_admin: "بەشی کارگێڕی کار", major_accounting: "بەشی ژمێریاری",
       major_bank: "بەشی بانک", major_pr: "بەشی پەیوەندییە گشتییەکان",
-      dept_library: "کتێبخانە", dept_finance: "دارایی", dept_warehouse: "گەنجینە", dept_records: "تۆمارگا",
+      dept_library: "کتێبخانە", dept_finance: "دارایی", dept_warehouse: "گەنجینە", dept_records: "تۆمارگا", dept_internal: "بەشە ناوخۆیی",
       an_overall: "دۆخی گشتی", an_by_dept: "تەواوبوو بەپێی هۆبە",
       an_cleared: "خوێندکاری تەواو ئەستۆپاک", an_remaining: "خوێندکاری ماوە",
       data_tools: "داتا و باکئەپ", data_tools_hint: "باکئەپێکی تەواوی هەموو داتا دابەزێنە، یان هەموو خوێندکاران و تۆمارەکان بسڕەوە بۆ دەستپێکردنەوە.",

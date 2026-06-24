@@ -104,7 +104,7 @@
   const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
   function majorLabel(s) { return MAJOR_KEY[s] ? T(MAJOR_KEY[s]) : (s || "—"); }
 
-  const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records" };
+  const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records", "بەشە ناوخۆیی": "dept_internal" };
   function deptLabel(d) { return DEPT_KEY[d] ? T(DEPT_KEY[d]) : (d || "—"); }
 
   async function quickSet(studentDocId, dept, status) {
@@ -133,7 +133,7 @@
     setTimeout(() => (t.className = "toast"), 2600);
   }
   function emptyState(title, sub) {
-    return `<div class="empty"><div class="emblem">IM</div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(sub)}</p></div>`;
+    return `<div class="empty"><div class="emblem">SCMS</div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(sub)}</p></div>`;
   }
 
   // ---------- RENDER ROUTER ----------
@@ -183,7 +183,7 @@
       host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_completed")}</th><th>${T("c_notcompleted")}</th><th>${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = me.department;
-      $("ovTableTitle").textContent = T("ov_recent", { d: dept });
+      $("ovTableTitle").textContent = T("ov_recent", { d: deptLabel(dept) });
       const recent = students.map((s) => ({ s, r: internMap[key(s.id, dept)] }))
         .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
