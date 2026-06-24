@@ -196,8 +196,19 @@
   function renderStudents() {
     const q = ($("studentSearch").value || "").toLowerCase().trim();
     const tf = $("studentTimeFilter").value;
+    const mf = ($("studentMajorFilter") || {}).value || "";
     const list = students.filter((s) =>
-      (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!tf || s.time === tf));
+      (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) &&
+      (!tf || s.time === tf) && (!mf || s.major === mf));
+    const sel = $("studentMajorFilter");
+    if (sel) {
+      const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
+      const cur = sel.value;
+      sel.innerHTML = `<option value="">${T("all_majors")}</option>` +
+        MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
+        extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+      if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
+    }
     const host = $("studentsTable");
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
@@ -765,6 +776,7 @@
   $("logoutBtn").addEventListener("click", async () => { unsub.forEach((u) => u && u()); await auth.signOut(); window.location.replace("index.html"); });
 
   $("studentSearch").addEventListener("input", renderStudents);
+  { const mf = $("studentMajorFilter"); if (mf) mf.addEventListener("change", renderStudents); }
   $("studentTimeFilter").addEventListener("change", renderStudents);
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
