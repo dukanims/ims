@@ -387,6 +387,148 @@
     window.print();
   }
 
+  // ---------- BACKUP / RESET / IMPORT (admin) ----------
+  function backupAll() {
+    const data = {
+      app: "IMS", exportedAt: new Date().toISOString(),
+      departments: departments.slice(),
+      students: students.map((s) => ({ id: s.id, name: s.name, studentId: s.studentId, major: s.major, stage: s.stage, time: s.time })),
+      internships: Object.values(internMap).map((r) => ({ id: r.id, studentId: r.studentId, studentNumber: r.studentNumber, studentName: r.studentName, departmentId: r.departmentId, status: r.status, note: r.note || "", updatedBy: r.updatedBy || "" })),
+      users: accounts.map((a) => ({ uid: a.uid, username: a.username, role: a.role, department: a.department || "" }))
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `IMS_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href); toast(T("to_backup_done"), "ok");
+  }
+
+  async function deleteAllInChunks(docs) {
+    for (let i = 0; i < docs.length; i += 400) {
+      const batch = db.batch();
+      docs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
+  }
+  async function resetAll() {
+    const sSnap = await db.collection("students").get();
+    const iSnap = await db.collection("internships").get();
+    await deleteAllInChunks(iSnap.docs.map((d) => d.ref));
+    await deleteAllInChunks(sSnap.docs.map((d) => d.ref));
+    toast(T("to_reset_done"), "ok");
+  }
+
+  // value normalisers (accept Kurdish or English)
+  function normMajor(v) {
+    const x = String(v || "").trim().toLowerCase();
+    if (/it|ئایتی|ايتي|تەکنەلۆژیا/.test(x)) return "IT";
+    if (/admin|کارگێ|كارگێ|بەڕێوەبردن|اداره/.test(x)) return "Business Administration";
+    if (/account|ژمێر|محاسب|حساب/.test(x)) return "Accounting";
+    if (/bank|بانک/.test(x)) return "Banking";
+    if (/public|relation|پەیوەند|گشتی|علاقات/.test(x)) return "Public Relations";
+    return String(v || "").trim();
+  }
+  function normStage(v) {
+    const x = String(v || "").trim().toLowerCase();
+    if (/(^|[^\d])2|دوو|ثاني|second/.test(x)) return "Stage 2";
+    if (/(^|[^\d])1|یەک|یه‌ک|اول|first/.test(x)) return "Stage 1";
+    return String(v || "").trim();
+  }
+  function normTime(v) {
+    const x = String(v || "").trim().toLowerCase();
+    if (/even|ئێوار|ايوار|مساء|عصر/.test(x)) return "Evening";
+    if (/morn|بەیان|به‌یان|صباح/.test(x)) return "Morning";
+    return "Morning";
+  }
+  function parseCsv(text) {
+    const rows = []; let row = [], cur = "", q = false;
+    text = text.replace(/^\uFEFF/, "");
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') q = false;
+        else cur += ch;
+      } else {
+        if (ch === '"') q = true;
+        else if (ch === ",") { row.push(cur); cur = ""; }
+        else if (ch === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+        else if (ch === "\r") { /* ignore */ }
+        else cur += ch;
+      }
+    }
+    if (cur.length || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter((r) => r.some((c) => String(c).trim() !== ""));
+  }
+  function downloadTemplate() {
+    const header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime")];
+    const sample = ["Sara Ahmed", "2026001", "IT", "Stage 1", "Morning"];
+    const csv = [header, sample].map((r) => r.map(csvCell).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "IMS_students_template.csv"; a.click(); URL.revokeObjectURL(a.href);
+  }
+  async function importStudentsFromFile(file) {
+    const text = await file.text();
+    let rows = parseCsv(text);
+    if (!rows.length) { toast(T("import_none"), "err"); return; }
+    // drop header row if first cell isn't a plausible name+number pair (detect by header keywords)
+    const first = rows[0].map((c) => String(c).toLowerCase());
+    const looksHeader = first.some((c) => /name|ناو|id|ناسنامه|ناسنامە|major|بەش|stage|قۆناغ|time|کات/.test(c));
+    if (looksHeader) rows = rows.slice(1);
+    const valid = rows.filter((r) => (r[0] || "").trim() && (r[1] || "").trim());
+    if (!valid.length) { toast(T("import_none"), "err"); return; }
+    for (let i = 0; i < valid.length; i += 400) {
+      const batch = db.batch();
+      valid.slice(i, i + 400).forEach((r) => {
+        const ref = db.collection("students").doc();
+        batch.set(ref, {
+          name: String(r[0]).trim(), studentId: String(r[1]).trim(),
+          major: normMajor(r[2]), stage: normStage(r[3]), time: normTime(r[4])
+        });
+      });
+      await batch.commit();
+    }
+    toast(T("to_import_done", { n: valid.length }), "ok");
+  }
+  function importModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("m_import_title")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <p class="muted" style="margin-top:0;font-size:13.5px;">${escapeHtml(T("import_help"))}</p>
+        <button class="btn ghost" id="tplBtn" style="margin-bottom:14px;">${T("download_template")}</button>
+        <div class="field"><label>${T("import_pick")}</label><input type="file" id="impFile" accept=".csv,text/csv" /></div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn" id="impGo">${T("btn_import")}</button></div>`);
+    $("tplBtn").addEventListener("click", downloadTemplate);
+    $("impGo").addEventListener("click", async () => {
+      const f = $("impFile").files[0];
+      if (!f) { showModalErr(T("import_none")); return; }
+      const b = $("impGo"); b.disabled = true; b.innerHTML = '<span class="spin"></span> ' + T("creating");
+      try { await importStudentsFromFile(f); closeModal(); }
+      catch (e) { showModalErr(T("err_save") + e.message); b.disabled = false; b.textContent = T("btn_import"); }
+    });
+  }
+  function resetModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("m_reset_title")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <p style="margin-top:0;">${escapeHtml(T("reset_msg"))}</p>
+        <div class="field"><label>${T("reset_type_hint")}</label><input id="resetWord" placeholder="DELETE" /></div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn danger" id="resetGo">${T("reset_all")}</button></div>`);
+    $("resetGo").addEventListener("click", async () => {
+      if (($("resetWord").value || "").trim().toUpperCase() !== "DELETE") { showModalErr(T("reset_type_hint")); return; }
+      const b = $("resetGo"); b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+      try { await resetAll(); closeModal(); }
+      catch (e) { showModalErr(T("err_delete") + e.message); b.disabled = false; b.textContent = T("reset_all"); }
+    });
+  }
+
   // ---------- MODALS ----------
   function openModal(html, wide) { $("modal").className = "modal" + (wide ? " wide" : ""); $("modal").innerHTML = html; $("modalBg").classList.add("show"); }
   function closeModal() { $("modalBg").classList.remove("show"); $("modal").innerHTML = ""; }
@@ -602,6 +744,9 @@
   });
 
   $("addStudentBtn").addEventListener("click", () => studentModal(null));
+  { const b = $("importStudentsBtn"); if (b) b.addEventListener("click", importModal); }
+  { const b = $("backupBtn"); if (b) b.addEventListener("click", backupAll); }
+  { const b = $("resetBtn"); if (b) b.addEventListener("click", resetModal); }
   $("addDeptBtn").addEventListener("click", deptModal);
   $("addAccountBtn").addEventListener("click", accountModal);
   $("printBtn").addEventListener("click", printReport);
