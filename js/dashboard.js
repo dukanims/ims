@@ -429,6 +429,65 @@
     toast(T("to_reset_done"), "ok");
   }
 
+  async function restoreFromFile(file) {
+    const text = await file.text();
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error(T("restore_bad")); }
+    if (!data || !Array.isArray(data.students)) throw new Error(T("restore_bad"));
+
+    // restore departments (merge)
+    if (Array.isArray(data.departments) && data.departments.length) {
+      const b = db.batch();
+      data.departments.forEach((name) => { if (name) b.set(db.collection("departments").doc(slug(name)), { name }); });
+      await b.commit();
+    }
+    // restore students, keeping a map from old id -> new id
+    const idMap = {};
+    for (let i = 0; i < data.students.length; i += 400) {
+      const b = db.batch();
+      data.students.slice(i, i + 400).forEach((s) => {
+        const ref = db.collection("students").doc();
+        idMap[s.id] = ref.id;
+        b.set(ref, { name: s.name || "", studentId: s.studentId || "", major: s.major || "", stage: s.stage || "", time: s.time || "Morning" });
+      });
+      await b.commit();
+    }
+    // restore internship records, remapped to new student ids
+    const recs = Array.isArray(data.internships) ? data.internships : [];
+    for (let i = 0; i < recs.length; i += 400) {
+      const b = db.batch();
+      recs.slice(i, i + 400).forEach((r) => {
+        const newSid = idMap[r.studentId];
+        if (!newSid || !r.departmentId) return;
+        b.set(db.collection("internships").doc(key(newSid, r.departmentId)), {
+          studentId: newSid, studentNumber: r.studentNumber || "", studentName: r.studentName || "",
+          departmentId: r.departmentId, status: r.status || "Pending", note: r.note || "",
+          date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: r.updatedBy || me.username
+        }, { merge: true });
+      });
+      await b.commit();
+    }
+    toast(T("to_restore_done", { n: data.students.length }), "ok");
+  }
+  function restoreModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("m_restore_title")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <p class="muted" style="margin-top:0;font-size:13.5px;">${escapeHtml(T("restore_msg"))}</p>
+        <div class="field"><label>${T("restore_pick")}</label><input type="file" id="restFile" accept=".json,application/json" /></div>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn" id="restGo">${T("btn_restore")}</button></div>`);
+    $("restGo").addEventListener("click", async () => {
+      const f = $("restFile").files[0];
+      if (!f) { showModalErr(T("restore_bad")); return; }
+      const b = $("restGo"); b.disabled = true; b.innerHTML = '<span class="spin"></span> ' + T("creating");
+      try { await restoreFromFile(f); closeModal(); }
+      catch (e) { showModalErr(e.message); b.disabled = false; b.textContent = T("btn_restore"); }
+    });
+  }
+
   // value normalisers (accept Kurdish or English)
   function normMajor(v) {
     const x = String(v || "").trim().toLowerCase();
@@ -768,6 +827,7 @@
   $("addStudentBtn").addEventListener("click", () => studentModal(null));
   { const b = $("importStudentsBtn"); if (b) b.addEventListener("click", importModal); }
   { const b = $("backupBtn"); if (b) b.addEventListener("click", backupAll); }
+  { const b = $("restoreBtn"); if (b) b.addEventListener("click", restoreModal); }
   { const b = $("resetBtn"); if (b) b.addEventListener("click", resetModal); }
   $("addDeptBtn").addEventListener("click", deptModal);
   $("addAccountBtn").addEventListener("click", accountModal);
