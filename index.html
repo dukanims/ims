@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=13" />
+  <link rel="stylesheet" href="css/styles.css?v=14" />
 </head>
 <body>
   <button id="langToggle" class="lang-btn lang-float">English</button>
@@ -19,8 +19,11 @@
         <b style="line-height:1.5;"><span data-i18n="org_top">سەرۆکایەتی زانکۆی پۆلیتەکنیکی سلێمانی</span><br/>
           <span data-i18n="org_sub" style="font-weight:500;opacity:.85;font-size:14px;">پەیمانگای تەکنیکی دوکان</span></b>
       </div>
-      <div>
+      <div class="hero-mid">
+        <span class="hero-kicker" data-i18n="hero_kicker">Clearance Platform</span>
+        <div class="hero-accent"></div>
         <h1 data-i18n="sys_name">سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران</h1>
+        <p data-i18n="hero_tag">A single, unified record for student clearance across every department.</p>
       </div>
       <div class="foot">&nbsp;</div>
     </aside>
@@ -28,7 +31,6 @@
     <main class="auth-main">
       <div class="auth-card">
         <h2 data-i18n="login_title">Sign in to your account</h2>
-        <p class="lead" data-i18n="login_lead">Administrators and department accounts both sign in here.</p>
 
         <div id="alert" class="alert err"></div>
 
@@ -39,7 +41,12 @@
           </div>
           <div class="field">
             <label for="password" data-i18n="f_password">Password</label>
-            <input id="password" type="password" autocomplete="current-password" data-i18n-ph="ph_password" placeholder="Your password" required />
+            <div class="pass-wrap">
+              <input id="password" type="password" autocomplete="current-password" data-i18n-ph="ph_password" placeholder="Your password" required />
+              <button type="button" id="passToggle" class="pass-eye" aria-label="Show password">
+                <svg id="eyeIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
           <button id="submitBtn" type="submit" class="btn block" data-i18n="sign_in">Sign in</button>
         </form>
@@ -50,8 +57,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="js/i18n.js?v=13"></script>
-  <script src="js/firebase-config.js?v=13"></script>
-  <script src="js/login.js?v=13"></script>
+  <script src="js/i18n.js?v=14"></script>
+  <script src="js/firebase-config.js?v=14"></script>
+  <script src="js/login.js?v=14"></script>
 </body>
 </html>

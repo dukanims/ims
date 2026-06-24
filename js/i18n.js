@@ -9,6 +9,7 @@
     en: {
       app_name: "Student Clearance Management System",
       org_top: "Sulaimani Polytechnic University", org_sub: "Dukan Technical Institute", sys_name: "Student Clearance Management System",
+      hero_tag: "A single, unified record for student clearance across every department.", hero_kicker: "Clearance Platform", show_password: "Show password", hide_password: "Hide password",
       super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} dept.",
       sign_out: "Sign out", cancel: "Cancel", you: "you",
       lang_label: "کوردی",
@@ -158,6 +159,7 @@
     ku: {
       app_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       org_top: "سەرۆکایەتی زانکۆی پۆلیتەکنیکی سلێمانی", org_sub: "پەیمانگای تەکنیکی دوکان", sys_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
+      hero_tag: "تۆمارێکی یەکگرتوو بۆ ئەستۆپاکی خوێندکاران لە هەموو هۆبەکاندا.", hero_kicker: "سیستەمی ئەستۆپاکی", show_password: "پیشاندانی وشەی نهێنی", hide_password: "شاردنەوەی وشەی نهێنی",
       super_admin: "بەڕێوەبەری سەرەکی", administrator: "بەڕێوەبەر", department_role: "بەشی {d}",
       sign_out: "چوونەدەرەوە", cancel: "هەڵوەشاندنەوە", you: "تۆ",
       lang_label: "English",

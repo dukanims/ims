@@ -8,6 +8,18 @@
 
   auth.onAuthStateChanged((user) => { if (user) window.location.replace("dashboard.html"); });
 
+  const passToggle = document.getElementById("passToggle");
+  if (passToggle) {
+    passToggle.addEventListener("click", () => {
+      const pw = document.getElementById("password");
+      const showing = pw.type === "text";
+      pw.type = showing ? "password" : "text";
+      passToggle.setAttribute("aria-label", showing ? t("show_password") : t("hide_password"));
+      const icon = document.getElementById("eyeIcon");
+      if (icon) icon.style.opacity = showing ? "1" : ".55";
+    });
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     alertBox.classList.remove("show");
