@@ -348,7 +348,7 @@
     const sf = ($("reportStatusFilter") || {}).value || "";
     $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
     renderAnalytics(filterDept);
-    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), T("e_norep_s")); return; }
+    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), isAdmin ? T("e_norep_s") : ""); return; }
     if (isAdmin && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
@@ -772,7 +772,7 @@
     document.querySelectorAll(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     const map = {
-      overview: ["t_overview", "s_overview"], students: ["t_students", "s_students"],
+      overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
       internships: ["t_internships", isAdmin ? "s_intern_admin" : "s_intern_dept"],
       accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", "s_reports"]
     };

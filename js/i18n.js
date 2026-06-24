@@ -20,10 +20,10 @@
       nav_mydept: "My Department", nav_accounts: "Departments & Accounts", nav_reports: "Reports",
 
       // page titles / subs
-      t_overview: "Overview", s_overview: "Snapshot of internship progress",
+      t_overview: "Overview", s_overview: "Snapshot of internship progress", s_overview_dept: "Information summary",
       t_students: "Students", s_students: "Register and manage student records",
       t_internships: "Internships", s_intern_admin: "Mark internship completion by department",
-      s_intern_dept: "Mark internship completion for your department",
+      s_intern_dept: "",
       t_accounts: "Departments & Accounts", s_accounts: "Manage departments and login access",
       t_reports: "Reports", s_reports: "Review, print and export internship records",
 
@@ -171,10 +171,10 @@
       nav_overview: "گشتی", nav_students: "خوێندکاران", nav_internships: "ڕاهێنانەکان",
       nav_mydept: "بەشەکەم", nav_accounts: "بەشەکان و هەژمارەکان", nav_reports: "ڕاپۆرتەکان",
 
-      t_overview: "گشتی", s_overview: "پوختەی پێشکەوتنی ڕاهێنان",
+      t_overview: "گشتی", s_overview: "پوختەی پێشکەوتنی ڕاهێنان", s_overview_dept: "پوختەی زانیارییەکان",
       t_students: "خوێندکاران", s_students: "تۆمارکردن و بەڕێوەبردنی خوێندکاران",
       t_internships: "ڕاهێنانەکان", s_intern_admin: "دیاریکردنی تەواوبوونی ڕاهێنان بەپێی بەش",
-      s_intern_dept: "دیاریکردنی تەواوبوونی ڕاهێنان بۆ بەشەکەت",
+      s_intern_dept: "",
       t_accounts: "بەشەکان و هەژمارەکان", s_accounts: "بەڕێوەبردنی بەشەکان و دەستگەیشتنی چوونەژوورەوە",
       t_reports: "ڕاپۆرتەکان", s_reports: "پێداچوونەوە، چاپکردن و دەرهێنانی تۆمارەکان",
 
