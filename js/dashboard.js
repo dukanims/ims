@@ -89,6 +89,20 @@
   function statusOf(id, dept) { const r = internMap[key(id, dept)]; return r ? r.status : "Pending"; }
   function noteOf(id, dept) { const r = internMap[key(id, dept)]; return r ? (r.note || "") : ""; }
   function statusLabel(s) { return s === "Completed" ? T("s_completed") : s === "Not Completed" ? T("s_notcompleted") : T("s_pending"); }
+  const STAGES = ["Stage 1", "Stage 2", "Stage 3", "Stage 4"];
+  const STAGE_KEY = { "Stage 1": "stage_1", "Stage 2": "stage_2", "Stage 3": "stage_3", "Stage 4": "stage_4" };
+  function stageLabel(s) { return STAGE_KEY[s] ? T(STAGE_KEY[s]) : (s || "—"); }
+  function timeLabel(x) { return x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : (x || "—"); }
+  async function quickSet(studentDocId, dept, status) {
+    const s = students.find((x) => x.id === studentDocId); if (!s) return;
+    const rec = {
+      studentId: studentDocId, studentNumber: s.studentId, studentName: s.name,
+      departmentId: dept, status, note: noteOf(studentDocId, dept),
+      date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
+    };
+    try { await db.collection("internships").doc(key(studentDocId, dept)).set(rec, { merge: true }); toast(T("to_status_saved"), "ok"); }
+    catch (e) { toast(T("err_save") + e.message, "err"); }
+  }
   function statusTag(s) {
     const cls = s === "Completed" ? "ok" : s === "Not Completed" ? "no" : "pending";
     return `<span class="tag ${cls}">${escapeHtml(statusLabel(s))}</span>`;
@@ -160,8 +174,8 @@
         .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
       const rows = recent.map(({ s, r }) =>
-        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
-      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
+      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
   }
 
@@ -173,12 +187,11 @@
     const host = $("studentsTable");
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
-    const timeLabel = (x) => x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : (x || "—");
     const rows = list.map((s) => `<tr>
       <td><div class="name">${escapeHtml(s.name)}</div></td>
       <td class="id">${escapeHtml(s.studentId)}</td>
       <td>${escapeHtml(s.major || "—")}</td>
-      <td>${escapeHtml(s.stage || "—")}</td>
+      <td>${escapeHtml(stageLabel(s.stage))}</td>
       <td><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
       <td><div class="row-actions">
         <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
@@ -203,13 +216,18 @@
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
     const rows = list.map((s) => {
       const r = internMap[key(s.id, dept)];
+      const cur = statusOf(s.id, dept);
       return `<tr>
-        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${escapeHtml(s.major || "")}</div></td>
+        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${escapeHtml(s.major || "")}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
         <td class="id">${escapeHtml(s.studentId)}</td>
-        <td>${statusTag(statusOf(s.id, dept))}</td>
+        <td>${statusTag(cur)}</td>
         <td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
         <td class="muted">${r ? fmtDate(r.date) : "—"}</td>
-        <td><div class="row-actions"><button class="btn sm" data-mark="${s.id}">${T("update")}</button></div></td>
+        <td><div class="row-actions">
+          <button class="btn sm ${cur === "Completed" ? "" : "ghost"}" data-quick="${s.id}" data-status="Completed">${T("s_completed")}</button>
+          <button class="btn sm ${cur === "Not Completed" ? "danger" : "ghost"}" data-quick="${s.id}" data-status="Not Completed">${T("s_notcompleted")}</button>
+          <button class="btn ghost sm" data-mark="${s.id}">${T("btn_note")}</button>
+        </div></td>
       </tr>`;
     }).join("");
     host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -248,14 +266,14 @@
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(d)}</th>`).join("");
       const rows = students.map((s) => {
         const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
-        return `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(s.stage || "—")}</td><td>${escapeHtml(s.time || "—")}</td>${cells}</tr>`;
+        return `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>${cells}</tr>`;
       }).join("");
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
       const rows = students.map((s) => `<tr>
         <td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td>
-        <td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(s.stage || "—")}</td><td>${escapeHtml(s.time || "—")}</td>
+        <td>${escapeHtml(s.major || "—")}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>
         <td>${statusTag(statusOf(s.id, dept))}</td><td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td></tr>`).join("");
       host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
@@ -267,11 +285,11 @@
     let header, rows;
     if (isAdmin && !filterDept) {
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments];
-      rows = students.map((s) => [s.name, s.studentId, s.major, s.stage, s.time, ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+      rows = students.map((s) => [s.name, s.studentId, s.major, stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
     } else {
       const dept = filterDept;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
-      rows = students.map((s) => [s.name, s.studentId, s.major, s.stage, s.time, dept, statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+      rows = students.map((s) => [s.name, s.studentId, s.major, stageLabel(s.stage), timeLabel(s.time), dept, statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
     }
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -306,7 +324,12 @@
           <div class="field"><label>${T("f_major")}</label><input id="m_major" value="${escapeHtml(s.major || "")}" placeholder="${escapeHtml(T("ph_major"))}" /></div>
         </div>
         <div class="grid-2">
-          <div class="field"><label>${T("f_stage")}</label><input id="m_stage" value="${escapeHtml(s.stage || "")}" placeholder="${escapeHtml(T("ph_stage"))}" /></div>
+          <div class="field"><label>${T("f_stage")}</label>
+            <select id="m_stage">
+              <option value="" ${!s.stage ? "selected" : ""}>${escapeHtml(T("ph_stage_select"))}</option>
+              ${STAGES.map((st) => `<option value="${st}" ${s.stage === st ? "selected" : ""}>${escapeHtml(stageLabel(st))}</option>`).join("")}
+              ${s.stage && !STAGES.includes(s.stage) ? `<option value="${escapeHtml(s.stage)}" selected>${escapeHtml(s.stage)}</option>` : ""}
+            </select></div>
           <div class="field"><label>${T("f_studytime")}</label>
             <div class="pills">
               <label><input type="radio" name="m_time" value="Morning" ${s.time === "Morning" || !s.time ? "checked" : ""}/> ${T("morning")}</label>
@@ -467,6 +490,12 @@
     }
     const mark = t.closest("[data-mark]");
     if (mark) { markModal(students.find((s) => s.id === mark.dataset.mark)); return; }
+    const quick = t.closest("[data-quick]");
+    if (quick) {
+      const dept = isAdmin ? activeDept : me.department;
+      quickSet(quick.dataset.quick, dept, quick.dataset.status);
+      return;
+    }
     const delD = t.closest("[data-del-dept]");
     if (delD) {
       const name = delD.dataset.delDept;

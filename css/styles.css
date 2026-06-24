@@ -452,3 +452,25 @@ td .name { font-weight: 600; color: var(--ink); }
   .stat-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .stat .v { font-size: 26px; }
 }
+
+/* ============================================================
+   PREVENT TEXT-CURSOR / SELECTION ON UI CHROME
+   (stops the I-beam caret appearing over the sidebar, headers,
+    buttons, tags and labels)
+   ============================================================ */
+.sidebar, .side-head, .side-head *, .nav, .nav-label, .nav a,
+.topbar, .topbar h2, .topbar .sub, .emblem, .eyebrow, .eyebrow-l,
+thead th, .stat .k, .card-head h3, .tag, .chip, .btn, .lang-btn,
+.menu-btn, .side-user, .stat .v, .nav-label, .modal-head h3 {
+  -webkit-user-select: none; -moz-user-select: none; user-select: none;
+}
+.sidebar, .side-head, .nav-label, .stat, .stat .k, .stat .v,
+.topbar h2, .topbar .sub, .card-head h3, .eyebrow, .eyebrow-l, thead th {
+  cursor: default;
+}
+.nav a, .btn, .lang-btn, .menu-btn, .x, [data-quick], [data-mark],
+[data-edit-student], [data-del-student], [data-del-dept], [data-del-account] {
+  cursor: pointer;
+}
+/* table body text stays selectable so data can be copied */
+tbody td, .note-text, .modal-body p, input, textarea, select { -webkit-user-select: text; user-select: text; }

@@ -88,6 +88,8 @@
       m_add_student: "Add student", m_edit_student: "Edit student",
       f_fullname: "Full name", f_studentid: "Student ID", f_major: "Department / Major",
       f_stage: "Stage", f_studytime: "Study time",
+      stage_1: "Stage 1", stage_2: "Stage 2", stage_3: "Stage 3", stage_4: "Stage 4",
+      ph_stage_select: "Select stage", btn_note: "Note", quick_hint: "Click to set status",
       ph_name: "e.g. Sara Ahmed", ph_sid: "e.g. 2023-1045", ph_major: "e.g. Accounting", ph_stage: "e.g. Stage 3",
       save_changes: "Save changes", btn_add_student: "Add student", err_name_required: "Full name and Student ID are required.",
 
@@ -208,6 +210,8 @@
       m_add_student: "زیادکردنی خوێندکار", m_edit_student: "دەستکاری خوێندکار",
       f_fullname: "ناوی تەواو", f_studentid: "ناسنامەی خوێندکار", f_major: "بەش / پسپۆڕی",
       f_stage: "قۆناغ", f_studytime: "کاتی خوێندن",
+      stage_1: "قۆناغی یەکەم", stage_2: "قۆناغی دووەم", stage_3: "قۆناغی سێیەم", stage_4: "قۆناغی چوارەم",
+      ph_stage_select: "قۆناغ هەڵبژێرە", btn_note: "تێبینی", quick_hint: "کلیک بکە بۆ دیاریکردنی دۆخ",
       ph_name: "وەک سارا ئەحمەد", ph_sid: "وەک ٢٠٢٣-١٠٤٥", ph_major: "وەک ژمێریاری", ph_stage: "وەک قۆناغی ٣",
       save_changes: "پاشەکەوتی گۆڕانکارییەکان", btn_add_student: "زیادکردنی خوێندکار", err_name_required: "ناوی تەواو و ناسنامەی خوێندکار پێویستن.",
 
