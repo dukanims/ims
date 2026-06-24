@@ -231,7 +231,7 @@
   function renderInternships() {
     const dept = isAdmin ? activeDept : me.department;
     if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
-    else { $("internHeading").textContent = T("h_mydept_status", { d: deptLabel(me.department) }); }
+    else { $("internHeading").textContent = ""; }
     const host = $("internTable");
     if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), isAdmin ? T("e_nostud_admin_s") : T("e_nostud_dept_s")); return; }
@@ -349,7 +349,7 @@
     const host = $("reportTable");
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
-    $("reportHeading").textContent = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
+    $("reportHeading").textContent = !isAdmin ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
     renderAnalytics(filterDept);
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), isAdmin ? T("e_norep_s") : ""); return; }
     if (isAdmin && !filterDept) {
@@ -777,7 +777,7 @@
     const map = {
       overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
       internships: ["t_internships", isAdmin ? "s_intern_admin" : "s_intern_dept"],
-      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", "s_reports"]
+      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""]
     };
     const m = map[view] || ["", ""];
     $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]);
