@@ -66,8 +66,8 @@ button { font-family: inherit; cursor: pointer; }
   display: grid; place-items: center;
   background: linear-gradient(150deg, var(--brand-600), var(--ink));
   color: var(--gold);
-  font-family: var(--display); font-weight: 700; font-size: 17px;
-  letter-spacing: .02em;
+  font-family: var(--display); font-weight: 700; font-size: 14px;
+  letter-spacing: .01em;
   box-shadow: inset 0 0 0 1.5px rgba(194,150,47,.55);
 }
 .emblem.lg { width: 64px; height: 64px; font-size: 26px; border-radius: 16px; }
