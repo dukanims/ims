@@ -38,6 +38,9 @@
     if (!isAdmin) {
       document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = "none"));
       const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
+      // Department accounts are Kurdish-only: force Kurdish and remove the toggle.
+      const tgl = $("langToggle"); if (tgl) tgl.style.display = "none";
+      if (window.getLang && window.getLang() !== "ku" && window.setLang) window.setLang("ku");
     }
     $("sideAvatar").textContent = (me.username[0] || "?").toUpperCase();
     updateRoleText();
