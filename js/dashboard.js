@@ -98,7 +98,7 @@
   const STAGES = ["Stage 1", "Stage 2"];
   const STAGE_KEY = { "Stage 1": "stage_1", "Stage 2": "stage_2", "Stage 3": "stage_3", "Stage 4": "stage_4" };
   function stageLabel(s) { return STAGE_KEY[s] ? T(STAGE_KEY[s]) : (s || "—"); }
-  function timeLabel(x) { return x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : (x || "—"); }
+  function timeLabel(x) { return x === "Morning" ? T("morning") : x === "Evening" ? T("evening") : x === "Parallel" ? T("parallel") : (x || "—"); }
 
   const MAJORS = ["IT", "Business Administration", "Accounting", "Banking", "Public Relations"];
   const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
@@ -506,6 +506,7 @@
   }
   function normTime(v) {
     const x = String(v || "").trim().toLowerCase();
+    if (/parallel|پارال|پارالێل|موازي/.test(x)) return "Parallel";
     if (/even|ئێوار|ايوار|مساء|عصر/.test(x)) return "Evening";
     if (/morn|بەیان|به‌یان|صباح/.test(x)) return "Morning";
     return "Morning";
@@ -643,6 +644,7 @@
             <div class="pills">
               <label><input type="radio" name="m_time" value="Morning" ${s.time === "Morning" || !s.time ? "checked" : ""}/> ${T("morning")}</label>
               <label><input type="radio" name="m_time" value="Evening" ${s.time === "Evening" ? "checked" : ""}/> ${T("evening")}</label>
+              <label><input type="radio" name="m_time" value="Parallel" ${s.time === "Parallel" ? "checked" : ""}/> ${T("parallel")}</label>
             </div>
           </div>
         </div>
