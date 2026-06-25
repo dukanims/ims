@@ -520,3 +520,8 @@ tbody td, .note-text, .modal-body p, .modal-body, table, th, td,
 }
 .auth-card input { cursor: text; -webkit-user-select: text; user-select: text; }
 .lang-btn { cursor: pointer; }
+
+/* Login page: text caret ONLY inside the username/password inputs */
+.auth-shell, .auth-shell * { -webkit-user-select: none; -moz-user-select: none; user-select: none; cursor: default; }
+.auth-shell input { -webkit-user-select: text; user-select: text; cursor: text; }
+.auth-shell button, .auth-shell .pass-eye, .auth-shell .lang-btn { cursor: pointer; }
