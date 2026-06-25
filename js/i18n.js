@@ -59,7 +59,7 @@
       eb_registry: "Student Registry", h_all_students: "All students", add_student: "+ Add student",
       ph_search_student: "Search name or ID…", all_times: "All study times", morning: "Morning", evening: "Evening", parallel: "Parallel",
       c_fullname: "Full name", c_studentid: "Student ID", c_major: "Department / Major", c_stage: "Stage", c_studytime: "Study time",
-      e_nostudents_t: "No students yet", e_nostudents_s: "Click “Add student” to register your first student.",
+      e_nostudents_t: "No students", e_nostudents_s: "Click “Add student” to register your first student.",
       e_nomatch_t: "No matches", e_nomatch_s: "Try a different search or filter.", edit: "Edit", del: "Delete",
 
       // internships
@@ -207,7 +207,7 @@
       eb_registry: "تۆماری خوێندکاران", h_all_students: "هەموو خوێندکاران", add_student: "+ زیادکردنی خوێندکار",
       ph_search_student: "گەڕان بە ناو یان ناسنامە…", all_times: "هەموو کاتەکانی خوێندن", morning: "بەیانیان", evening: "ئێواران", parallel: "پارالێڵ",
       c_fullname: "ناوی تەواو", c_studentid: "ناسنامەی خوێندکار", c_major: "بەش / پسپۆڕی", c_stage: "قۆناغ", c_studytime: "کاتی خوێندن",
-      e_nostudents_t: "هێشتا هیچ خوێندکارێک نییە", e_nostudents_s: "کلیک لە «زیادکردنی خوێندکار» بکە بۆ تۆمارکردنی یەکەم خوێندکار.",
+      e_nostudents_t: "هیچ خوێندکارێک نییە", e_nostudents_s: "کلیک لە «زیادکردنی خوێندکار» بکە بۆ تۆمارکردنی یەکەم خوێندکار.",
       e_nomatch_t: "هیچ ئەنجامێک نییە", e_nomatch_s: "گەڕان یان پاڵاوتنێکی تر تاقی بکەرەوە.", edit: "دەستکاری", del: "سڕینەوە",
 
       eb_status: "دۆخی ڕاهێنان", h_intern_records: "تۆمارەکانی ڕاهێنان",
