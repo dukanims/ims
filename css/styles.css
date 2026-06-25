@@ -504,7 +504,14 @@ thead th, .stat .k, .card-head h3, .tag, .chip, .btn, .lang-btn,
   cursor: pointer;
 }
 /* table body text stays selectable so data can be copied */
-tbody td, .note-text, .modal-body p, input, textarea, select { -webkit-user-select: text; user-select: text; }
+/* Only real input controls show a text caret / are selectable.
+   Everything else in the app uses the default arrow and no text selection. */
+input, textarea, select { -webkit-user-select: text; user-select: text; cursor: text; }
+select { cursor: pointer; }
+tbody td, .note-text, .modal-body p, .modal-body, table, th, td,
+.card, .card-body, .stat, .empty, .content {
+  -webkit-user-select: none; -moz-user-select: none; user-select: none; cursor: default;
+}
 
 /* No text caret on auth (login) page chrome */
 .auth-aside, .auth-aside *, .auth-card h2, .auth-card .lead, .auth-card label,

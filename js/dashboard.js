@@ -108,7 +108,7 @@
   const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
   function majorLabel(s) { return MAJOR_KEY[s] ? T(MAJOR_KEY[s]) : (s || "—"); }
 
-  const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records", "بەشە ناوخۆیی": "dept_internal" };
+  const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records", "بەشە ناوخۆیی": "dept_internal", "بەشەناوخۆیی": "dept_internal" };
   function deptLabel(d) { return DEPT_KEY[d] ? T(DEPT_KEY[d]) : (d || "—"); }
 
   async function quickSet(studentDocId, dept, status) {
