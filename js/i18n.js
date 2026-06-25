@@ -69,7 +69,7 @@
       s_completed: "Completed", s_notcompleted: "Not Completed", s_pending: "Pending",
       e_choose_t: "Choose a department", e_choose_s: "Pick a department above to mark internship status.",
       e_nostud_admin_s: "Add students first under the Students tab.",
-      e_nostud_dept_s: "No students have been registered by the administrator yet.",
+      e_nostud_dept_s: "No students registered.",
       update: "Update",
 
       // accounts
@@ -216,7 +216,7 @@
       s_completed: "تەواوبوو", s_notcompleted: "تەواونەبوو", s_pending: "چاوەڕوان",
       e_choose_t: "بەشێک هەڵبژێرە", e_choose_s: "بەشێک لە سەرەوە هەڵبژێرە بۆ دیاریکردنی دۆخی ڕاهێنان.",
       e_nostud_admin_s: "سەرەتا لە تابی «خوێندکاران» خوێندکار زیاد بکە.",
-      e_nostud_dept_s: "هێشتا هیچ خوێندکارێک لەلایەن بەڕێوەبەرەوە تۆمار نەکراوە.",
+      e_nostud_dept_s: "هیچ خوێندکارێک تۆمار نەکراوە.",
       update: "نوێکردنەوە",
 
       eb_admin: "بەڕێوەبردن", h_accounts: "بەشەکان و هەژمارەکان",
