@@ -235,7 +235,7 @@
     else { $("internHeading").textContent = ""; }
     const host = $("internTable");
     if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
-    if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), isAdmin ? T("e_nostud_admin_s") : T("e_nostud_dept_s")); return; }
+    if (!students.length) { host.innerHTML = emptyState(isAdmin ? T("e_nostudents_t") : T("e_nostud_dept_s"), isAdmin ? T("e_nostud_admin_s") : ""); return; }
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
     const list = students.filter((s) => {
