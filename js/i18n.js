@@ -85,7 +85,7 @@
       eb_reporting: "Reporting", h_report: "Internship report",
       h_report_dept: "{d} internship report", h_report_full: "Full internship report",
       all_departments: "All departments", print: "Print", export_csv: "Export CSV",
-      e_norep_t: "Nothing to report", e_norep_s: "Add students to generate a report.",
+      e_norep_t: "No report available", e_norep_s: "Add students to generate a report.",
 
       // modals - student
       m_add_student: "Add student", m_edit_student: "Edit student",
@@ -230,7 +230,7 @@
       eb_reporting: "ڕاپۆرتکردن", h_report: "ڕاپۆرتی ڕاهێنان",
       h_report_dept: "ڕاپۆرتی ڕاهێنانی {d}", h_report_full: "ڕاپۆرتی تەواوی ڕاهێنان",
       all_departments: "هەموو بەشەکان", print: "چاپکردن", export_csv: "دەرهێنانی CSV",
-      e_norep_t: "هیچ شتێک بۆ ڕاپۆرت نییە", e_norep_s: "خوێندکار زیاد بکە بۆ دروستکردنی ڕاپۆرت.",
+      e_norep_t: "هیچ ڕاپۆرتێک نییە", e_norep_s: "خوێندکار زیاد بکە بۆ دروستکردنی ڕاپۆرت.",
 
       m_add_student: "زیادکردنی خوێندکار", m_edit_student: "دەستکاری خوێندکار",
       f_fullname: "ناوی تەواو", f_studentid: "ناسنامەی خوێندکار", f_major: "بەش / پسپۆڕی",
