@@ -10,14 +10,15 @@
       app_name: "Student Clearance Management System",
       org_top: "Sulaimani Polytechnic University", org_sub: "Dukan Technical Institute", sys_name: "Student Clearance Management System",
       hero_tag: "A single, unified record for student clearance across every department.", hero_kicker: "Clearance Platform", show_password: "Show password", hide_password: "Hide password",
-      super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} dept.",
+      super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} unit",
       sign_out: "Sign out", cancel: "Cancel", you: "you",
       lang_label: "کوردی",
 
       // groups + nav
       g_workspace: "Workspace", g_admin: "Administration", g_insight: "Insight",
       nav_overview: "Overview", nav_students: "Students", nav_internships: "Internships",
-      nav_mydept: "My Department", nav_accounts: "Departments & Accounts", nav_reports: "Reports",
+      nav_mydept: "Student List", nav_accounts: "Departments & Accounts", nav_reports: "Reports",
+      mydept_title: "Students", mydept_eyebrow: "Student status",
 
       // page titles / subs
       t_overview: "Overview", s_overview: "Snapshot of internship progress", s_overview_dept: "Information summary",
@@ -52,7 +53,7 @@
       c_status: "Status", c_note: "Note", c_updated: "Updated",
       pct_of: "{p}% of {t}",
       e_nodepts_t: "No departments yet", e_nodepts_s: "Add one under Departments & Accounts.",
-      e_noupd_t: "No updates yet", e_noupd_s: "",
+      e_noupd_t: "No updates", e_noupd_s: "",
 
       // students
       eb_registry: "Student Registry", h_all_students: "All students", add_student: "+ Add student",
@@ -163,13 +164,14 @@
       app_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       org_top: "سەرۆکایەتی زانکۆی پۆلیتەکنیکی سلێمانی", org_sub: "پەیمانگای تەکنیکی دوکان", sys_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       hero_tag: "تۆمارێکی یەکگرتوو بۆ ئەستۆپاکی خوێندکاران لە هەموو هۆبەکاندا.", hero_kicker: "سیستەمی ئەستۆپاکی", show_password: "پیشاندانی وشەی نهێنی", hide_password: "شاردنەوەی وشەی نهێنی",
-      super_admin: "بەڕێوەبەری سەرەکی", administrator: "بەڕێوەبەر", department_role: "بەشی {d}",
+      super_admin: "بەڕێوەبەری سەرەکی", administrator: "بەڕێوەبەر", department_role: "هۆبەی {d}",
       sign_out: "چوونەدەرەوە", cancel: "هەڵوەشاندنەوە", you: "تۆ",
       lang_label: "English",
 
       g_workspace: "شوێنی کار", g_admin: "بەڕێوەبردن", g_insight: "تێڕوانین",
       nav_overview: "گشتی", nav_students: "خوێندکاران", nav_internships: "ڕاهێنانەکان",
-      nav_mydept: "بەشەکەم", nav_accounts: "بەشەکان و هەژمارەکان", nav_reports: "ڕاپۆرتەکان",
+      nav_mydept: "لیستی خوێندکاران", nav_accounts: "بەشەکان و هەژمارەکان", nav_reports: "ڕاپۆرتەکان",
+      mydept_title: "خوێندکاران", mydept_eyebrow: "دۆخی خوێندکاران",
 
       t_overview: "گشتی", s_overview: "پوختەی پێشکەوتنی ڕاهێنان", s_overview_dept: "پوختەی زانیارییەکان",
       t_students: "خوێندکاران", s_students: "تۆمارکردن و بەڕێوەبردنی خوێندکاران",
@@ -200,7 +202,7 @@
       c_status: "دۆخ", c_note: "تێبینی", c_updated: "نوێکراوەتەوە",
       pct_of: "{p}٪ لە {t}",
       e_nodepts_t: "هێشتا هیچ بەشێک نییە", e_nodepts_s: "لە بەشی «بەشەکان و هەژمارەکان» یەکێک زیاد بکە.",
-      e_noupd_t: "هێشتا هیچ نوێکردنەوەیەک نییە", e_noupd_s: "",
+      e_noupd_t: "هیچ نوێکردنەوەیەک نییە", e_noupd_s: "",
 
       eb_registry: "تۆماری خوێندکاران", h_all_students: "هەموو خوێندکاران", add_student: "+ زیادکردنی خوێندکار",
       ph_search_student: "گەڕان بە ناو یان ناسنامە…", all_times: "هەموو کاتەکانی خوێندن", morning: "بەیانیان", evening: "ئێواران", parallel: "پارالێڵ",

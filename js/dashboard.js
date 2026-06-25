@@ -38,6 +38,7 @@
     if (!isAdmin) {
       document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = "none"));
       const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
+      const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
       // Department accounts are Kurdish-only: force Kurdish and remove the toggle.
       const tgl = $("langToggle"); if (tgl) tgl.style.display = "none";
       if (window.getLang && window.getLang() !== "ku" && window.setLang) window.setLang("ku");
@@ -776,7 +777,7 @@
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     const map = {
       overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
-      internships: ["t_internships", isAdmin ? "s_intern_admin" : "s_intern_dept"],
+      internships: [isAdmin ? "t_internships" : "mydept_title", isAdmin ? "s_intern_admin" : "s_intern_dept"],
       accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""]
     };
     const m = map[view] || ["", ""];
