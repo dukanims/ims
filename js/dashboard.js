@@ -205,7 +205,7 @@
         students.forEach((s) => { const st = statusOf(s.id, d); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
         return `<tr><td class="name"><span class="dept-dot"></span>${escapeHtml(deptLabel(d))}</td><td class="cell-num ok">${done}</td><td class="cell-num no">${no}</td><td class="cell-num pending">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
       }).join("");
-      host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_completed")}</th><th>${T("c_notcompleted")}</th><th>${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+      host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th class="num-col">${T("c_completed")}</th><th class="num-col">${T("c_notcompleted")}</th><th class="num-col">${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = me.department;
       $("ovTableTitle").textContent = T("ov_recent", { d: deptLabel(dept) });

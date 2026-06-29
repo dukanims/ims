@@ -666,3 +666,9 @@ tbody td, .note-text, .modal-body p, .modal-body, table, th, td,
    beneath them, so titles line up with their numbers.
    (matrix-cell headers stay centred for the admin report grid) */
 [dir="rtl"] thead th:not(.matrix-cell) { text-align: right; }
+
+/* Glance table: centre the numeric columns so each value sits directly
+   under the centre of its column title. */
+thead th.num-col { text-align: center; }
+[dir="rtl"] thead th.num-col { text-align: center; }
+.cell-num { text-align: center; }
