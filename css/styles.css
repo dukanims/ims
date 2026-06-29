@@ -661,3 +661,8 @@ tbody td, .note-text, .modal-body p, .modal-body, table, th, td,
   .stat .v { font-size: 26px; }
   .stat .stat-ic { width: 42px; height: 42px; }
 }
+
+/* RTL: align column headers to the same (right) edge as the values
+   beneath them, so titles line up with their numbers.
+   (matrix-cell headers stay centred for the admin report grid) */
+[dir="rtl"] thead th:not(.matrix-cell) { text-align: right; }
