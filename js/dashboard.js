@@ -10,6 +10,16 @@
   const unsub = [];
 
   const $ = (id) => document.getElementById(id);
+
+  // Inline icons for the dashboard stat cards (stroke = currentColor)
+  const ICONS = {
+    students: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    departments: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>',
+    completed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    slots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+    notcompleted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+  };
   const STATUSES = ["Completed", "Not Completed", "Pending"];
   const T = (k, v) => (window.t ? window.t(k, v) : k);
 
@@ -152,27 +162,38 @@
     }
   }
 
-  function stat(k, v) { return `<div class="stat"><div class="k">${escapeHtml(k)}</div><div class="v tnum">${escapeHtml(String(v))}</div></div>`; }
+  function stat(k, v, opts) {
+    opts = opts || {};
+    const tone = opts.tone || "brand";
+    const icon = opts.icon || "";
+    return `<div class="stat stat-${tone}"><div class="stat-row">
+      <div class="stat-ic">${icon}</div>
+      <div class="stat-txt"><div class="k">${escapeHtml(k)}</div><div class="v tnum">${escapeHtml(String(v))}</div></div>
+    </div></div>`;
+  }
   function renderStats() {
     const grid = $("statGrid");
     if (isAdmin) {
       let completed = 0, total = 0;
       students.forEach((s) => departments.forEach((d) => { total++; if (statusOf(s.id, d) === "Completed") completed++; }));
-      grid.innerHTML = stat(T("st_students"), students.length) + stat(T("st_departments"), departments.length) +
-        stat(T("st_pl_completed"), completed) + stat(T("st_total_slots"), total);
+      grid.innerHTML = stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students }) +
+        stat(T("st_departments"), departments.length, { tone: "gold", icon: ICONS.departments }) +
+        stat(T("st_pl_completed"), completed, { tone: "ok", icon: ICONS.completed }) +
+        stat(T("st_total_slots"), total, { tone: "slate", icon: ICONS.slots });
     } else {
       const dept = me.department; let done = 0, no = 0, pend = 0;
       students.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
-      grid.innerHTML = stat(T("st_students"), students.length) + stat(T("st_completed"), done) +
-        stat(T("st_notcompleted"), no) + stat(T("st_pending"), pend);
+      grid.innerHTML = stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students }) +
+        stat(T("st_completed"), done, { tone: "ok", icon: ICONS.completed }) +
+        stat(T("st_notcompleted"), no, { tone: "no", icon: ICONS.notcompleted }) +
+        stat(T("st_pending"), pend, { tone: "pending", icon: ICONS.pending });
     }
   }
 
   function statusBar(done, total) {
     const pct = total ? Math.round((done / total) * 100) : 0;
-    return `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:999px;height:9px;overflow:hidden;">
-      <div style="width:${pct}%;height:100%;background:var(--gold);"></div></div>
-      <div class="muted" style="font-size:11.5px;margin-top:3px;">${T("pct_of", { p: pct, t: total })}</div>`;
+    return `<div class="prog"><div class="prog-track"><div class="prog-fill" style="width:${pct}%;"></div></div><span class="prog-pct">${pct}%</span></div>
+      <div class="muted prog-meta">${T("pct_of", { p: pct, t: total })}</div>`;
   }
   function renderOverview() {
     const host = $("ovTable");
@@ -182,7 +203,7 @@
       const rows = departments.map((d) => {
         let done = 0, no = 0, pend = 0;
         students.forEach((s) => { const st = statusOf(s.id, d); if (st === "Completed") done++; else if (st === "Not Completed") no++; else pend++; });
-        return `<tr><td class="name">${escapeHtml(deptLabel(d))}</td><td class="cell-num">${done}</td><td class="cell-num">${no}</td><td class="cell-num">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
+        return `<tr><td class="name"><span class="dept-dot"></span>${escapeHtml(deptLabel(d))}</td><td class="cell-num ok">${done}</td><td class="cell-num no">${no}</td><td class="cell-num pending">${pend}</td><td>${statusBar(done, students.length)}</td></tr>`;
       }).join("");
       host.innerHTML = `<table><thead><tr><th>${T("c_department")}</th><th>${T("c_completed")}</th><th>${T("c_notcompleted")}</th><th>${T("c_pending")}</th><th style="width:160px;">${T("c_progress")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     } else {
@@ -217,16 +238,16 @@
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
     const rows = list.map((s) => `<tr>
-      <td><div class="name">${escapeHtml(s.name)}</div></td>
-      <td class="id">${escapeHtml(s.studentId)}</td>
-      <td>${escapeHtml(majorLabel(s.major))}</td>
-      <td>${escapeHtml(stageLabel(s.stage))}</td>
-      <td><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
-      <td><div class="row-actions">
+      <td data-label="${T("c_fullname")}"><div class="name">${escapeHtml(s.name)}</div></td>
+      <td class="id" data-label="${T("c_studentid")}">${escapeHtml(s.studentId)}</td>
+      <td data-label="${T("c_major")}">${escapeHtml(majorLabel(s.major))}</td>
+      <td data-label="${T("c_stage")}">${escapeHtml(stageLabel(s.stage))}</td>
+      <td data-label="${T("c_studytime")}"><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
+      <td class="actions-cell"><div class="row-actions">
         <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
         <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>
       </div></td></tr>`).join("");
-    host.innerHTML = `<table><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderInternships() {
@@ -247,19 +268,19 @@
       const r = internMap[key(s.id, dept)];
       const cur = statusOf(s.id, dept);
       return `<tr>
-        <td><div class="name">${escapeHtml(s.name)}</div><div class="id">${s.major ? escapeHtml(majorLabel(s.major)) : ""}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
-        <td class="id">${escapeHtml(s.studentId)}</td>
-        <td>${statusTag(cur)}</td>
-        <td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
-        <td class="muted">${r ? fmtDate(r.date) : "—"}</td>
-        <td><div class="row-actions">
+        <td data-label="${T("c_student")}"><div class="name">${escapeHtml(s.name)}</div><div class="id">${s.major ? escapeHtml(majorLabel(s.major)) : ""}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
+        <td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
+        <td data-label="${T("c_status")}">${statusTag(cur)}</td>
+        <td class="note-text" data-label="${T("c_note")}">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
+        <td class="muted" data-label="${T("c_updated")}">${r ? fmtDate(r.date) : "—"}</td>
+        <td class="actions-cell"><div class="row-actions">
           <button class="btn sm ${cur === "Completed" ? "" : "ghost"}" data-quick="${s.id}" data-status="Completed">${T("s_completed")}</button>
           <button class="btn sm ${cur === "Not Completed" ? "danger" : "ghost"}" data-quick="${s.id}" data-status="Not Completed">${T("s_notcompleted")}</button>
           <button class="btn ghost sm" data-mark="${s.id}">${T("btn_note")}</button>
         </div></td>
       </tr>`;
     }).join("");
-    host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderDepartments() {
@@ -368,10 +389,10 @@
       const list = sf ? students.filter((s) => statusOf(s.id, dept) === sf) : students;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => `<tr>
-        <td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td>
-        <td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${escapeHtml(timeLabel(s.time))}</td>
-        <td>${statusTag(statusOf(s.id, dept))}</td><td class="note-text">${escapeHtml(noteOf(s.id, dept) || "—")}</td></tr>`).join("");
-      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+        <td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
+        <td data-label="${T("c_major")}">${escapeHtml(majorLabel(s.major))}</td><td data-label="${T("c_stage")}">${escapeHtml(stageLabel(s.stage))}</td><td data-label="${T("c_studytime")}">${escapeHtml(timeLabel(s.time))}</td>
+        <td data-label="${T("c_status")}">${statusTag(statusOf(s.id, dept))}</td><td class="note-text" data-label="${T("c_note")}">${escapeHtml(noteOf(s.id, dept) || "—")}</td></tr>`).join("");
+      host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
   }
 
