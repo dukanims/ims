@@ -694,3 +694,24 @@ thead th.num-col { text-align: center; }
   color: #ffffff !important;
 }
 #logoutBtn:active { background: rgba(214,77,70,.30) !important; }
+
+/* ============================================================
+   LOGIN CARD — larger, roomier sign-in form (v43)
+   (scoped to .auth-card so the dashboard inputs are unchanged)
+   ============================================================ */
+.auth-card { max-width: 460px; }
+.auth-card h2 { font-size: 30px; margin-bottom: 30px; }
+.auth-card .field { margin-bottom: 20px; }
+.auth-card .field label { font-size: 14.5px; margin-bottom: 8px; }
+.auth-card input {
+  font-size: 16.5px; padding: 15px 16px; border-radius: var(--r-md);
+}
+.auth-card .pass-wrap input { padding-inline-end: 50px; }
+.auth-card .pass-eye svg { width: 22px; height: 22px; }
+.auth-card .btn.block {
+  padding: 16px 18px; font-size: 17px; border-radius: var(--r-md); margin-top: 4px;
+}
+@media (max-width: 480px){
+  .auth-card { max-width: 100%; }
+  .auth-card h2 { font-size: 26px; }
+}
