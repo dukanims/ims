@@ -828,3 +828,18 @@ thead th.num-col { text-align: center; }
 /* hide the nav scrollbar so no bar shows on the sidebar */
 .nav { scrollbar-width: none; -ms-overflow-style: none; }
 .nav::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ============================================================
+   FIXED SIDEBAR (v62)
+   Lock the whole app to the viewport height so the blue sidebar
+   never moves — only the main content area scrolls. The sidebar
+   nav and Sign-out stay perfectly still (no vertical/horizontal
+   movement). Reverted to normal page scroll on mobile.
+   ============================================================ */
+@media (min-width: 781px) {
+  .app { height: 100vh; overflow: hidden; }
+  .sidebar { height: 100vh; overflow: hidden; }
+  .main { height: 100vh; overflow-y: auto; overflow-x: hidden; }
+  /* topbar stays pinned inside the scrolling main area */
+  .topbar { position: sticky; top: 0; }
+}
