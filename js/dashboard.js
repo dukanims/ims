@@ -213,7 +213,9 @@
       const dept = me.department;
       $("ovTableTitle").textContent = T("ov_recent", { d: deptLabel(dept) });
       const recent = students.map((s) => ({ s, r: internMap[key(s.id, dept)] }))
-        .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
+        .filter((x) => x.r)
+        .sort((a, b) => (((b.r.date && b.r.date.seconds) || Infinity)) - (((a.r.date && a.r.date.seconds) || Infinity)))
+        .slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
       const rows = recent.map(({ s, r }) =>
         `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
