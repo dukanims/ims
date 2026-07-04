@@ -520,10 +520,12 @@
   function normMajor(v) {
     const x = String(v || "").trim().toLowerCase();
     if (/it|ئایتی|ايتي|تەکنەلۆژیا/.test(x)) return "IT";
-    if (/admin|کارگێ|كارگێ|بەڕێوەبردن|اداره/.test(x)) return "Business Administration";
-    if (/account|ژمێر|محاسب|حساب/.test(x)) return "Accounting";
+    // Check the SPECIFIC majors before the generic "management/کارگێ" word,
+    // otherwise "کارگێری بانک" (Banking) is wrongly caught by the کارگێ rule.
     if (/bank|بانک/.test(x)) return "Banking";
+    if (/account|ژمێر|محاسب|حساب/.test(x)) return "Accounting";
     if (/public|relation|پەیوەند|گشتی|علاقات/.test(x)) return "Public Relations";
+    if (/admin|کارگێ|كارگێ|بەڕێوەبردن|اداره/.test(x)) return "Business Administration";
     return String(v || "").trim();
   }
   function normStage(v) {
@@ -591,9 +593,14 @@
     for (let i = 0; i < valid.length; i += 400) {
       const batch = db.batch();
       valid.slice(i, i + 400).forEach((r) => {
-        const ref = db.collection("students").doc();
+        const sid = String(r[1]).trim();
+        // If a student with this ID already exists, update that record
+        // (keeps the same doc id, so internship records stay linked);
+        // otherwise create a new student. This makes re-importing safe.
+        const existing = students.find((s) => String(s.studentId || "").trim() === sid);
+        const ref = existing ? db.collection("students").doc(existing.id) : db.collection("students").doc();
         batch.set(ref, {
-          name: String(r[0]).trim(), studentId: String(r[1]).trim(),
+          name: String(r[0]).trim(), studentId: sid,
           major: normMajor(r[2]), stage: normStage(r[3]), time: normTime(r[4])
         });
       });
