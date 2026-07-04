@@ -768,7 +768,7 @@ thead th.num-col { text-align: center; }
 
 /* --- Kurdish: keep the names balanced and safe --- */
 [dir="rtl"] .auth-aside .brand-row b {
-  font-size: clamp(21px, 2.1vw, 26px); white-space: normal; line-height: 1.5;
+  font-size: clamp(16px, 1.85vw, 24px); white-space: nowrap; line-height: 1.5;
 }
 [dir="rtl"] .auth-aside .brand-row b span[data-i18n="org_sub"] {
   font-size: clamp(16px, 1.6vw, 20px) !important; white-space: normal;
