@@ -299,9 +299,9 @@
     }
   };
 
-  let lang = "ku";
-  try { lang = localStorage.getItem("ims_lang") || "ku"; } catch (e) {}
-  if (lang !== "en" && lang !== "ku") lang = "ku";
+  let lang = "en";
+  try { lang = localStorage.getItem("ims_lang") || "en"; } catch (e) {}
+  if (lang !== "en" && lang !== "ku") lang = "en";
 
   function t(key, vars) {
     let s = (STR[lang] && STR[lang][key] != null) ? STR[lang][key] : (STR.en[key] != null ? STR.en[key] : key);

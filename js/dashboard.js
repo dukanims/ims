@@ -76,10 +76,7 @@
       if (isAdmin && !activeDept && departments.length) activeDept = departments[0];
       populateDeptSelectors(); refresh();
     }));
-    const internQuery = isAdmin
-      ? db.collection("internships")
-      : db.collection("internships").where("departmentId", "==", me.department);
-    unsub.push(internQuery.onSnapshot((s) => {
+    unsub.push(db.collection("internships").onSnapshot((s) => {
       internMap = {}; s.docs.forEach((d) => { internMap[d.id] = { id: d.id, ...d.data() }; });
       refresh();
     }));
@@ -213,9 +210,7 @@
       const dept = me.department;
       $("ovTableTitle").textContent = T("ov_recent", { d: deptLabel(dept) });
       const recent = students.map((s) => ({ s, r: internMap[key(s.id, dept)] }))
-        .filter((x) => x.r)
-        .sort((a, b) => (((b.r.date && b.r.date.seconds) || Infinity)) - (((a.r.date && a.r.date.seconds) || Infinity)))
-        .slice(0, 8);
+        .filter((x) => x.r && x.r.date).sort((a, b) => (b.r.date.seconds || 0) - (a.r.date.seconds || 0)).slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
       const rows = recent.map(({ s, r }) =>
         `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
@@ -522,12 +517,10 @@
   function normMajor(v) {
     const x = String(v || "").trim().toLowerCase();
     if (/it|ئایتی|ايتي|تەکنەلۆژیا/.test(x)) return "IT";
-    // Check the SPECIFIC majors before the generic "management/کارگێ" word,
-    // otherwise "کارگێری بانک" (Banking) is wrongly caught by the کارگێ rule.
-    if (/bank|بانک/.test(x)) return "Banking";
-    if (/account|ژمێر|محاسب|حساب/.test(x)) return "Accounting";
-    if (/public|relation|پەیوەند|گشتی|علاقات/.test(x)) return "Public Relations";
     if (/admin|کارگێ|كارگێ|بەڕێوەبردن|اداره/.test(x)) return "Business Administration";
+    if (/account|ژمێر|محاسب|حساب/.test(x)) return "Accounting";
+    if (/bank|بانک/.test(x)) return "Banking";
+    if (/public|relation|پەیوەند|گشتی|علاقات/.test(x)) return "Public Relations";
     return String(v || "").trim();
   }
   function normStage(v) {
@@ -595,14 +588,9 @@
     for (let i = 0; i < valid.length; i += 400) {
       const batch = db.batch();
       valid.slice(i, i + 400).forEach((r) => {
-        const sid = String(r[1]).trim();
-        // If a student with this ID already exists, update that record
-        // (keeps the same doc id, so internship records stay linked);
-        // otherwise create a new student. This makes re-importing safe.
-        const existing = students.find((s) => String(s.studentId || "").trim() === sid);
-        const ref = existing ? db.collection("students").doc(existing.id) : db.collection("students").doc();
+        const ref = db.collection("students").doc();
         batch.set(ref, {
-          name: String(r[0]).trim(), studentId: sid,
+          name: String(r[0]).trim(), studentId: String(r[1]).trim(),
           major: normMajor(r[2]), stage: normStage(r[3]), time: normTime(r[4])
         });
       });
