@@ -219,8 +219,8 @@
         .slice(0, 8);
       if (!recent.length) { host.innerHTML = emptyState(T("e_noupd_t"), T("e_noupd_s")); return; }
       const rows = recent.map(({ s, r }) =>
-        `<tr><td class="name">${escapeHtml(s.name)}</td><td class="id">${escapeHtml(s.studentId)}</td><td>${escapeHtml(majorLabel(s.major))}</td><td>${escapeHtml(stageLabel(s.stage))}</td><td>${statusTag(r.status)}</td><td class="note-text">${escapeHtml(r.note || "—")}</td><td class="muted">${fmtDate(r.date)}</td></tr>`).join("");
-      host.innerHTML = `<table><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
+        `<tr><td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td><td data-label="${T("c_major")}">${escapeHtml(majorLabel(s.major))}</td><td data-label="${T("c_stage")}">${escapeHtml(stageLabel(s.stage))}</td><td data-label="${T("c_status")}">${statusTag(r.status)}</td><td class="note-text" data-label="${T("c_note")}">${escapeHtml(r.note || "—")}</td><td class="muted" data-label="${T("c_updated")}">${fmtDate(r.date)}</td></tr>`).join("");
+      host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
   }
 
