@@ -97,8 +97,8 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 0 0 28px rgba(255,255,255,.03);
 }
 .auth-aside .brand-row { display: flex; align-items: center; gap: 16px; }
-.auth-aside .brand-row b { font-size: 22px; color: #fff; line-height: 1.5; white-space: nowrap; }
-.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 18px !important; white-space: nowrap; }
+.auth-aside .brand-row b { font-size: 26px; color: #fff; line-height: 1.45; white-space: nowrap; }
+.auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 20px !important; white-space: nowrap; }
 .auth-aside .hero-mid { margin: auto 0; position: relative; z-index: 1; }
 .auth-aside .hero-kicker {
   display: inline-block; font-family: var(--display); font-size: 26px; font-weight: 700;
@@ -113,7 +113,7 @@ button { font-family: inherit; cursor: pointer; }
 [dir="rtl"] .auth-aside .brand-row b span,
 [dir="rtl"] .auth-aside .hero-kicker { font-family: "Noto Kufi Arabic", "Segoe UI", Tahoma, sans-serif; }
 .auth-aside h1 {
-  color: #fff; font-size: clamp(36px, 4.2vw, 54px); line-height: 1.2;
+  color: #fff; font-size: clamp(28px, 3.2vw, 40px); line-height: 1.2;
   margin: 0 0 20px; max-width: 18ch; font-weight: 700; letter-spacing: -0.005em;
 }
 .auth-aside p { color: #c3cde3; max-width: 40ch; margin: 0; font-size: 15.5px; line-height: 1.7; }
