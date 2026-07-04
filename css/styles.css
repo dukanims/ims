@@ -806,3 +806,25 @@ thead th.num-col { text-align: center; }
 
 /* Stat-card icons are emoji now — size them inside the bubble (v57) */
 .stat .stat-ic { font-size: 22px; line-height: 1; }
+
+/* ============================================================
+   ADMIN LAYOUT FIXES (v61)
+   1) "Departments & Accounts" page: keep the two side-by-side
+      tables inside the screen (no horizontal scrollbar).
+   2) Sidebar: compact nav so it fits without its own scrollbar,
+      keeping the Sign-out button always visible at the bottom.
+   ============================================================ */
+
+/* 1 — no horizontal overflow from the two-column tables */
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-2 .table-wrap table { min-width: 0; }
+
+/* 2 — compact, non-scrolling sidebar nav */
+.nav { padding: 10px 12px; }
+.nav a { padding: 11px 16px; }
+.nav .nav-label { padding: 10px 14px 5px; }
+.sidebar .side-head { padding: 16px 16px 14px; }
+.side-foot { padding: 12px 14px; }
+/* hide the nav scrollbar so no bar shows on the sidebar */
+.nav { scrollbar-width: none; -ms-overflow-style: none; }
+.nav::-webkit-scrollbar { width: 0; height: 0; }

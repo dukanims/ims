@@ -129,7 +129,7 @@
     const s = students.find((x) => x.id === studentDocId); if (!s) return;
     const rec = {
       studentId: studentDocId, studentNumber: s.studentId, studentName: s.name,
-      departmentId: dept, status, note: noteOf(studentDocId, dept),
+      departmentId: dept, status, note: status === "Completed" ? "" : noteOf(studentDocId, dept),
       date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
     };
     try { await db.collection("internships").doc(key(studentDocId, dept)).set(rec, { merge: true }); toast(T("to_status_saved"), "ok"); }
@@ -342,7 +342,7 @@
       students.forEach((s) => departments.forEach((d) => { const st = statusOf(s.id, d); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; }));
 
       const cards = `<div class="stat-grid" style="margin-bottom:16px;">
-        ${stat(T("an_cleared"), cleared)}${stat(T("an_remaining"), remaining)}${stat(T("st_completed"), c)}${stat(T("st_pending"), p)}</div>`;
+        ${stat(T("an_cleared"), cleared, { tone: "brand", icon: ICONS.students })}${stat(T("an_remaining"), remaining, { tone: "slate", icon: ICONS.slots })}${stat(T("st_completed"), c, { tone: "ok", icon: ICONS.completed })}${stat(T("st_pending"), p, { tone: "pending", icon: ICONS.pending })}</div>`;
 
       const donutCard = `<div class="card"><div class="card-head"><h3>${T("an_overall")}</h3></div>
         <div class="card-body" style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
@@ -369,7 +369,7 @@
       const dept = filterDept; let c = 0, n = 0, p = 0;
       students.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; });
       host.innerHTML = `<div class="stat-grid" style="margin-bottom:18px;">
-        ${stat(T("st_completed"), c)}${stat(T("st_notcompleted"), n)}${stat(T("st_pending"), p)}${stat(T("st_students"), students.length)}</div>`;
+        ${stat(T("st_completed"), c, { tone: "ok", icon: ICONS.completed })}${stat(T("st_notcompleted"), n, { tone: "no", icon: ICONS.notcompleted })}${stat(T("st_pending"), p, { tone: "pending", icon: ICONS.pending })}${stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students })}</div>`;
     }
   }
 
@@ -725,7 +725,7 @@
       if (!status) { showModalErr(T("pick_status")); return; }
       const rec = {
         studentId: student.id, studentNumber: student.studentId, studentName: student.name,
-        departmentId: dept, status, note: $("m_note").value.trim(),
+        departmentId: dept, status, note: status === "Completed" ? "" : $("m_note").value.trim(),
         date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
       };
       try { await db.collection("internships").doc(key(student.id, dept)).set(rec, { merge: true }); closeModal(); toast(T("to_status_saved"), "ok"); }
