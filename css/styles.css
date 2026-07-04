@@ -744,13 +744,32 @@ thead th.num-col { text-align: center; }
 .side-foot .side-user .meta b { font-size: 16px; }
 .side-foot .side-user .meta span { font-size: 13.5px; }
 
+/* (login brand sizing is handled by the language-aware block below) */
+
 /* ============================================================
-   LOGIN BRAND — tablet safety (v49)
-   Below 860px the left panel is hidden (phones are fine). Between
-   ~860–1150px it is visible but narrower, so let the enlarged brand
-   names wrap and scale down a touch instead of overflowing.
+   LOGIN BRAND — language-aware, fully responsive sizing (v50)
+   Sizes scale with the viewport (clamp) and differ per language,
+   because the Kurdish text is longer/taller than the English.
+   Names stay on one line when they fit and wrap only if the screen
+   is very narrow — so they never overflow at any size.
    ============================================================ */
-@media (max-width: 1150px) {
-  .auth-aside .brand-row b { font-size: 22px; white-space: normal; }
-  .auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 17px !important; white-space: normal; }
+
+/* --- big system-name heading: smaller, esp. in Kurdish --- */
+.auth-aside h1            { font-size: clamp(26px, 2.8vw, 36px); }
+[dir="rtl"] .auth-aside h1 { font-size: clamp(22px, 2.3vw, 30px); line-height: 1.4; }
+
+/* --- English: university + institute names a bit bigger --- */
+[dir="ltr"] .auth-aside .brand-row b {
+  font-size: clamp(24px, 2.4vw, 30px); white-space: normal; line-height: 1.35;
+}
+[dir="ltr"] .auth-aside .brand-row b span[data-i18n="org_sub"] {
+  font-size: clamp(17px, 1.7vw, 22px) !important; white-space: normal;
+}
+
+/* --- Kurdish: keep the names balanced and safe --- */
+[dir="rtl"] .auth-aside .brand-row b {
+  font-size: clamp(21px, 2.1vw, 26px); white-space: normal; line-height: 1.5;
+}
+[dir="rtl"] .auth-aside .brand-row b span[data-i18n="org_sub"] {
+  font-size: clamp(16px, 1.6vw, 20px) !important; white-space: normal;
 }
