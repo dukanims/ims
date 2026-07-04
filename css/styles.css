@@ -803,3 +803,6 @@ thead th.num-col { text-align: center; }
   }
   .list-table td.note-text::before { text-align: start; }
 }
+
+/* Stat-card icons are emoji now — size them inside the bubble (v57) */
+.stat .stat-ic { font-size: 22px; line-height: 1; }
