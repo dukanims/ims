@@ -815,8 +815,11 @@ thead th.num-col { text-align: center; }
       keeping the Sign-out button always visible at the bottom.
    ============================================================ */
 
-/* 1 — no horizontal overflow from the two-column tables */
-.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* 1 — no horizontal overflow from the two-column tables (desktop only;
+       on mobile they stack to one column) */
+@media (min-width: 781px) {
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .grid-2 .table-wrap table { min-width: 0; }
 
 /* 2 — compact, non-scrolling sidebar nav */
@@ -842,4 +845,11 @@ thead th.num-col { text-align: center; }
   .main { height: 100vh; overflow-y: auto; overflow-x: hidden; }
   /* topbar stays pinned inside the scrolling main area */
   .topbar { position: sticky; top: 0; }
+}
+
+/* Progress cell stacks under its label on phone cards (v63) */
+@media (max-width: 640px) {
+  .list-table td.prog-cell { flex-direction: column; align-items: stretch; gap: 6px; }
+  .list-table td.prog-cell::before { text-align: start; }
+  .list-table td.prog-cell .prog { width: 100%; }
 }
