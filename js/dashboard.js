@@ -76,7 +76,10 @@
       if (isAdmin && !activeDept && departments.length) activeDept = departments[0];
       populateDeptSelectors(); refresh();
     }));
-    unsub.push(db.collection("internships").onSnapshot((s) => {
+    const internQuery = isAdmin
+      ? db.collection("internships")
+      : db.collection("internships").where("departmentId", "==", me.department);
+    unsub.push(internQuery.onSnapshot((s) => {
       internMap = {}; s.docs.forEach((d) => { internMap[d.id] = { id: d.id, ...d.data() }; });
       refresh();
     }));
