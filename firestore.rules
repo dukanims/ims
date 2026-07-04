@@ -2,7 +2,8 @@ rules_version = '2';
 
 // ============================================================
 //  Internship Management System — Firestore security rules
-//  Paste these in Firebase Console > Firestore Database > Rules.
+//  Paste these in Firebase Console > Firestore Database > Rules,
+//  then click "Publish".
 // ============================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -16,10 +17,19 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    // True only if the caller has a profile AND its role is 'admin'.
     function isAdmin() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && profile().role == 'admin';
+    }
+
+    // True if the caller has a profile with a (non-empty) department.
+    function isDeptUser() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().department is string
+        && profile().department != '';
     }
 
     function myDept() {
@@ -28,7 +38,8 @@ service cloud.firestore {
 
     // ---------------- users ----------------
     // A user can read their own profile; admins can read everyone.
-    // Only admins may modify roles/accounts.
+    // Only admins may create/modify/delete roles & accounts, so a
+    // department user can never promote themselves to admin.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if isAdmin();
@@ -49,13 +60,30 @@ service cloud.firestore {
     }
 
     // ---------------- internships ----------------
-    // Anyone signed in can read records (for reports).
-    // Admins write anything. Department users may only write records
-    // whose departmentId equals their own department.
+    // READ:   admins may read every record (for the full report/overview).
+    //         a department user may read ONLY records for their own
+    //         department — no department can see another department's data.
+    //         (The app queries internships with .where('departmentId','==',myDept)
+    //          for department users, which this rule permits.)
+    //
+    // CREATE: admins may create anything; a department user may create a
+    //         record only for their OWN department.
+    // UPDATE: admins may update anything; a department user may update a
+    //         record ONLY IF it already belongs to their department AND
+    //         stays in their department (no hijacking another department).
+    // DELETE: admins only.
     match /internships/{recordId} {
-      allow read: if isSignedIn();
-      allow create, update: if isAdmin()
-        || (isSignedIn() && request.resource.data.departmentId == myDept());
+      allow read: if isAdmin()
+        || (isDeptUser() && resource.data.departmentId == myDept());
+
+      allow create: if isAdmin()
+        || (isDeptUser() && request.resource.data.departmentId == myDept());
+
+      allow update: if isAdmin()
+        || (isDeptUser()
+            && resource.data.departmentId == myDept()
+            && request.resource.data.departmentId == myDept());
+
       allow delete: if isAdmin();
     }
   }
