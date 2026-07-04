@@ -743,3 +743,14 @@ thead th.num-col { text-align: center; }
 .side-foot .side-user .meta { text-align: center; }
 .side-foot .side-user .meta b { font-size: 16px; }
 .side-foot .side-user .meta span { font-size: 13.5px; }
+
+/* ============================================================
+   LOGIN BRAND — tablet safety (v49)
+   Below 860px the left panel is hidden (phones are fine). Between
+   ~860–1150px it is visible but narrower, so let the enlarged brand
+   names wrap and scale down a touch instead of overflowing.
+   ============================================================ */
+@media (max-width: 1150px) {
+  .auth-aside .brand-row b { font-size: 22px; white-space: normal; }
+  .auth-aside .brand-row b span[data-i18n="org_sub"] { font-size: 17px !important; white-space: normal; }
+}
