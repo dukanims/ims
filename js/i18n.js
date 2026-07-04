@@ -242,7 +242,7 @@
       major_bank: "بەشی بانک", major_pr: "بەشی پەیوەندییە گشتییەکان",
       dept_library: "کتێبخانە", dept_finance: "دارایی", dept_warehouse: "گەنجینە", dept_records: "تۆمارگا", dept_internal: "بەشە ناوخۆیی",
       an_overall: "دۆخی گشتی", an_by_dept: "تەواوبوو بەپێی هۆبە",
-      an_cleared: "خوێندکاری تەواو ئەستۆپاک", an_remaining: "خوێندکاری ماوە",
+      an_cleared: "خوێندکاری تەواوبوو لە ئەستۆپاکی", an_remaining: "خوێندکاری ماوە",
       data_tools: "داتا و باکئەپ", data_tools_hint: "باکئەپێکی تەواوی هەموو داتا دابەزێنە، یان هەموو خوێندکاران و تۆمارەکان بسڕەوە بۆ دەستپێکردنەوە.",
       backup_all: "باکئەپی هەموو داتا", restore_all: "گەڕاندنەوە لە باکئەپ", reset_all: "سفرکردنەوەی هەموو داتا",
       m_restore_title: "گەڕاندنەوە لە باکئەپ", restore_pick: "فایلی باکئەپ هەڵبژێرە (.json)", btn_restore: "گەڕاندنەوە",

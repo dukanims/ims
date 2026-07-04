@@ -424,9 +424,38 @@
   function csvCell(v) { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
   function printReport() {
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
-    $("printHead").innerHTML = `<h1>${escapeHtml(filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"))}</h1>
-      <div class="meta">${escapeHtml(T("brand_sub"))} · ${new Date().toLocaleString()}</div>`;
-    window.print();
+    const title = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
+    const tableHTML = $("reportTable").innerHTML;
+    const rtl = !(window.getLang && window.getLang() === "en");
+    const w = window.open("", "_blank");
+    if (!w) { toast(T("err_popup") || "Please allow pop-ups to print", "err"); return; }
+    w.document.write(`<!DOCTYPE html><html lang="${rtl ? "ckb" : "en"}" dir="${rtl ? "rtl" : "ltr"}"><head><meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${escapeHtml(title)}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        *{box-sizing:border-box;}
+        body{font-family:'Vazirmatn','Segoe UI',Tahoma,sans-serif;padding:22px;color:#15233f;margin:0;}
+        h1{font-size:20px;margin:0 0 4px;}
+        .meta{color:#666;font-size:12px;margin-bottom:14px;border-bottom:2px solid #c2962f;padding-bottom:8px;}
+        table{border-collapse:collapse;width:100%;font-size:12px;}
+        th,td{border:1px solid #d7dded;padding:6px 8px;text-align:${rtl ? "right" : "left"};}
+        th{background:#243b6b;color:#fff;white-space:nowrap;}
+        tr:nth-child(even) td{background:#f5f7fb;}
+        .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;}
+        .tag.ok{background:#e7f4ed;color:#1f8a52;}
+        .tag.no{background:#fbe9e7;color:#c33a2c;}
+        .tag.pending{background:#fbf1dc;color:#a9791c;}
+        .id{direction:ltr;}
+        td::before{display:none !important;}
+        @media print{body{padding:0;}}
+      </style></head><body>
+      <h1>${escapeHtml(title)}</h1>
+      <div class="meta">${escapeHtml(T("brand_sub"))} · ${new Date().toLocaleString()}</div>
+      ${tableHTML}
+      <script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script>
+      </body></html>`);
+    w.document.close();
   }
 
   // ---------- BACKUP / RESET / IMPORT (admin) ----------
