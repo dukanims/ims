@@ -773,3 +773,16 @@ thead th.num-col { text-align: center; }
 [dir="rtl"] .auth-aside .brand-row b span[data-i18n="org_sub"] {
   font-size: clamp(16px, 1.6vw, 20px) !important; white-space: normal;
 }
+
+/* ============================================================
+   SIDEBAR BRAND — mobile responsiveness (v52)
+   On phones the sidebar is a narrow 270px drawer, so the brand
+   text must wrap (not nowrap) or part of it gets clipped/hidden.
+   Desktop keeps it on one line as before.
+   ============================================================ */
+@media (max-width: 780px) {
+  .sidebar .side-head b,
+  .sidebar .side-head span { white-space: normal; }
+  .sidebar .side-head b { font-size: 17px; }
+  .sidebar .side-head span { font-size: 13px; }
+}
