@@ -870,9 +870,8 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 .modal-head .x:hover { color: var(--ink); }
 
-/* Mobile top bar: hide the wrapping subtitle and let height grow (v80) */
+
+/* Mobile: keep the top-bar subtitle on a single line (no wrapping) (v81) */
 @media (max-width: 640px) {
-  .topbar { height: auto; min-height: 58px; padding-top: 9px; padding-bottom: 9px; }
-  .topbar .sub { display: none; }
-  .topbar h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44vw; }
+  .topbar .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58vw; }
 }
