@@ -542,7 +542,9 @@ tbody td, .note-text, .modal-body p, .modal-body, table, th, td,
 
 /* ---- Phones: turn list tables into clean cards (no overlap) ---- */
 @media (max-width: 640px) {
-  .table-wrap { overflow-x: visible; }
+  /* wide non-card tables (e.g. the admin report matrix) scroll sideways
+     inside their wrapper instead of stretching the whole page */
+  .table-wrap { overflow-x: auto; max-width: 100%; }
 
   .table-wrap .list-table { min-width: 0; width: 100%; }
   .list-table, .list-table tbody { display: block; width: 100%; }
