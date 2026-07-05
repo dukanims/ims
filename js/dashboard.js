@@ -5,7 +5,7 @@
   "use strict";
 
   let me = null, isAdmin = false;
-  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [];
+  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null;
   let currentView = "overview", activeDept = "";
   const unsub = [];
 
@@ -93,6 +93,10 @@
         historyLog = s.docs.map((d) => ({ id: d.id, ...d.data() }));
         if (currentView === "history") renderHistory();
       }, () => {}));
+      unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
+        lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
+        renderBackupReminder();
+      }, () => {}));
     }
   }
 
@@ -178,6 +182,7 @@
   // ---------- RENDER ROUTER ----------
   function refresh() {
     renderStats();
+    renderBackupReminder();
     switch (currentView) {
       case "overview": renderOverview(); break;
       case "students": renderStudents(); break;
@@ -610,6 +615,21 @@
     a.href = URL.createObjectURL(blob);
     a.download = `IMS_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click(); URL.revokeObjectURL(a.href); toast(T("to_backup_done"), "ok");
+    if (isAdmin) db.collection("meta").doc("backup").set({ lastBackup: firebase.firestore.FieldValue.serverTimestamp(), by: me.username }).catch(() => {});
+  }
+  function renderBackupReminder() {
+    const host = $("backupReminder"); if (!host) return;
+    if (!isAdmin) { host.innerHTML = ""; return; }
+    let days = Infinity;
+    if (lastBackupAt && lastBackupAt.toDate) days = Math.floor((Date.now() - lastBackupAt.toDate().getTime()) / 86400000);
+    if (days < 7) { host.innerHTML = ""; return; }
+    const msg = days === Infinity ? T("bk_never") : T("bk_stale", { n: days });
+    host.innerHTML = `<div class="backup-reminder">
+      <span class="bk-ic">🛡️</span>
+      <div class="bk-text"><b>${T("bk_title")}</b><span>${escapeHtml(msg)}</span></div>
+      <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
+    </div>`;
+    $("bkNow").addEventListener("click", backupAll);
   }
 
   async function deleteAllInChunks(docs) {

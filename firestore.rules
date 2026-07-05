@@ -87,6 +87,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------------- meta (app metadata, e.g. last backup time) ----------------
+    match /meta/{doc} {
+      allow read, write: if isAdmin();
+    }
+
     // ---------------- history (audit log) ----------------
     // Any signed-in user may append an entry when they change a status.
     // Only admins can read the log; entries are immutable (admins may
