@@ -864,3 +864,8 @@ thead th.num-col { text-align: center; }
 .modal.xwide { max-width: min(960px, 94vw); }
 .modal.xwide .table-wrap table { min-width: 0; font-size: 13px; }
 .modal.xwide .table-wrap th, .modal.xwide .table-wrap td { white-space: nowrap; }
+
+/* Pointer cursor on all buttons incl. the modal close (✕) (v70) */
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+.modal-head .x:hover { color: var(--ink); }
