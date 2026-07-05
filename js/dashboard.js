@@ -154,9 +154,8 @@
     if (!ts) return "—";
     const d = ts.toDate ? ts.toDate() : new Date(ts);
     const pad = (n) => String(n).padStart(2, "0");
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let h = d.getHours(); const ampm = h < 12 ? "AM" : "PM"; h = h % 12 || 12;
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} · ${pad(h)}:${pad(d.getMinutes())} ${ampm}`;
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} · ${pad(h)}:${pad(d.getMinutes())} ${ampm}`;
   }
   function logHistory(studentDocId, dept, status) {
     try {
