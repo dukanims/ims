@@ -228,9 +228,10 @@
     const q = ($("studentSearch").value || "").toLowerCase().trim();
     const tf = $("studentTimeFilter").value;
     const mf = ($("studentMajorFilter") || {}).value || "";
+    const sf = ($("studentStageFilter") || {}).value || "";
     const list = students.filter((s) =>
       (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) &&
-      (!tf || s.time === tf) && (!mf || s.major === mf));
+      (!tf || s.time === tf) && (!mf || s.major === mf) && (!sf || s.stage === sf));
     const sel = $("studentMajorFilter");
     if (sel) {
       const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
@@ -239,6 +240,14 @@
         MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
         extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
+    }
+    const ssel = $("studentStageFilter");
+    if (ssel) {
+      const allStages = STAGES.concat(Array.from(new Set(students.map((s) => s.stage).filter((v) => v && !STAGES.includes(v)))));
+      const cur = ssel.value;
+      ssel.innerHTML = `<option value="">${T("all_stages")}</option>` +
+        allStages.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(stageLabel(v))}</option>`).join("");
+      if ([...ssel.options].some((o) => o.value === cur)) ssel.value = cur;
     }
     const host = $("studentsTable");
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
@@ -913,6 +922,7 @@
 
   $("studentSearch").addEventListener("input", renderStudents);
   { const mf = $("studentMajorFilter"); if (mf) mf.addEventListener("change", renderStudents); }
+  { const sf = $("studentStageFilter"); if (sf) sf.addEventListener("change", renderStudents); }
   $("studentTimeFilter").addEventListener("change", renderStudents);
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
