@@ -642,9 +642,16 @@
   async function resetAll() {
     const sSnap = await db.collection("students").get();
     const iSnap = await db.collection("internships").get();
+    const hSnap = await db.collection("history").get();
     await deleteAllInChunks(iSnap.docs.map((d) => d.ref));
     await deleteAllInChunks(sSnap.docs.map((d) => d.ref));
+    await deleteAllInChunks(hSnap.docs.map((d) => d.ref));
     toast(T("to_reset_done"), "ok");
+  }
+  async function clearHistory() {
+    const hSnap = await db.collection("history").get();
+    await deleteAllInChunks(hSnap.docs.map((d) => d.ref));
+    toast(T("to_hist_cleared"), "ok");
   }
 
   async function restoreFromFile(file) {
@@ -883,6 +890,22 @@
     });
   }
 
+  function clearHistoryModal() {
+    openModal(`
+      <div class="modal-head"><h3>${T("hist_clear_title")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div id="mErr" class="alert err"></div>
+        <p style="margin-top:0;">${escapeHtml(T("hist_clear_msg"))}</p>
+      </div>
+      <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn danger" id="clearHistGo">${T("hist_clear")}</button></div>`);
+    $("clearHistGo").addEventListener("click", async () => {
+      const b = $("clearHistGo"); b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+      try { await clearHistory(); closeModal(); }
+      catch (e) { showModalErr(T("err_delete") + e.message); b.disabled = false; b.textContent = T("hist_clear"); }
+    });
+  }
+
   // ---------- MODALS ----------
   function openModal(html, extra) { $("modal").className = "modal" + (extra ? (extra === true ? " wide" : " " + extra) : ""); $("modal").innerHTML = html; $("modalBg").classList.add("show"); }
   function closeModal() { $("modalBg").classList.remove("show"); $("modal").innerHTML = ""; }
@@ -1114,6 +1137,7 @@
 
   $("studentSearch").addEventListener("input", renderStudents);
   { const h = $("historySearch"); if (h) h.addEventListener("input", renderHistory); }
+  { const ch = $("clearHistoryBtn"); if (ch) ch.addEventListener("click", clearHistoryModal); }
   { const hd = $("historyDeptFilter"); if (hd) hd.addEventListener("change", renderHistory); }
   { const mf = $("studentMajorFilter"); if (mf) mf.addEventListener("change", renderStudents); }
   { const sf = $("studentStageFilter"); if (sf) sf.addEventListener("change", renderStudents); }
