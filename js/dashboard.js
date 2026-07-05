@@ -617,11 +617,12 @@
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = "IMS_students_template.csv"; a.click(); URL.revokeObjectURL(a.href);
   }
-  async function importStudentsFromFile(file) {
+  // Parse a CSV/XLSX file into validated rows (no writing yet).
+  async function parseImportFile(file) {
     const name = (file.name || "").toLowerCase();
     let rows;
     if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-      if (typeof XLSX === "undefined") { toast(T("err_save") + "xlsx", "err"); return; }
+      if (typeof XLSX === "undefined") throw new Error("xlsx");
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -631,20 +632,19 @@
       const text = await file.text();
       rows = parseCsv(text);
     }
-    if (!rows.length) { toast(T("import_none"), "err"); return; }
-    // drop header row if first cell isn't a plausible name+number pair (detect by header keywords)
+    if (!rows.length) return [];
     const first = rows[0].map((c) => String(c).toLowerCase());
     const looksHeader = first.some((c) => /name|ناو|id|ناسنامه|ناسنامە|major|بەش|stage|قۆناغ|time|کات/.test(c));
     if (looksHeader) rows = rows.slice(1);
-    const valid = rows.filter((r) => (r[0] || "").trim() && (r[1] || "").trim());
-    if (!valid.length) { toast(T("import_none"), "err"); return; }
+    return rows.filter((r) => (r[0] || "").trim() && (r[1] || "").trim());
+  }
+
+  // Write the parsed rows to Firestore (upsert by student ID).
+  async function commitImport(valid) {
     for (let i = 0; i < valid.length; i += 400) {
       const batch = db.batch();
       valid.slice(i, i + 400).forEach((r) => {
         const sid = String(r[1]).trim();
-        // If a student with this ID already exists, update that record
-        // (keeps the same doc id, so internship records stay linked);
-        // otherwise create a new student. This makes re-importing safe.
         const existing = students.find((s) => String(s.studentId || "").trim() === sid);
         const ref = existing ? db.collection("students").doc(existing.id) : db.collection("students").doc();
         batch.set(ref, {
@@ -656,6 +656,50 @@
     }
     toast(T("to_import_done", { n: valid.length }), "ok");
   }
+
+  // Show a preview of what will be imported before writing anything.
+  function previewImport(valid) {
+    let newCount = 0, updCount = 0, warn = 0;
+    const rowsHtml = valid.map((r, i) => {
+      const sid = String(r[1]).trim();
+      const existing = students.find((s) => String(s.studentId || "").trim() === sid);
+      if (existing) updCount++; else newCount++;
+      const major = normMajor(r[2]), stage = normStage(r[3]), time = normTime(r[4]);
+      const mOk = MAJORS.includes(major), tOk = ["Morning", "Evening", "Parallel"].includes(time);
+      const flagged = !mOk || !tOk; if (flagged) warn++;
+      return `<tr class="${flagged ? "warn-row" : ""}">
+        <td>${i + 1}</td>
+        <td>${escapeHtml(String(r[0]).trim())}</td>
+        <td class="id">${escapeHtml(sid)}</td>
+        <td>${escapeHtml(majorLabel(major))}</td>
+        <td>${escapeHtml(stageLabel(stage))}</td>
+        <td>${escapeHtml(timeLabel(time))}</td>
+        <td>${existing ? T("imp_update") : T("imp_new")}</td></tr>`;
+    }).join("");
+    openModal(`
+      <div class="modal-head"><h3>${T("imp_preview_title")}</h3><button class="x" data-close>&times;</button></div>
+      <div class="modal-body">
+        <div class="imp-summary">
+          <span class="tag ok">${T("imp_new")}: ${newCount}</span>
+          <span class="tag pending">${T("imp_update")}: ${updCount}</span>
+          ${warn ? `<span class="tag no">${T("imp_warn")}: ${warn}</span>` : ""}
+        </div>
+        <div class="table-wrap" style="max-height:48vh;overflow:auto;margin-top:12px;">
+          <table><thead><tr><th>#</th><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("imp_action")}</th></tr></thead>
+          <tbody>${rowsHtml}</tbody></table>
+        </div>
+        ${warn ? `<p class="muted" style="font-size:12.5px;margin-top:10px;">${escapeHtml(T("imp_warn_hint"))}</p>` : ""}
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" data-close>${T("cancel")}</button>
+        <button class="btn" id="impConfirm">${T("imp_confirm")} (${valid.length})</button>
+      </div>`);
+    $("impConfirm").addEventListener("click", async () => {
+      const b = $("impConfirm"); b.disabled = true; b.innerHTML = '<span class="spin"></span> ' + T("creating");
+      try { await commitImport(valid); closeModal(); }
+      catch (e) { showModalErr(T("err_save") + e.message); b.disabled = false; b.textContent = T("imp_confirm"); }
+    });
+  }
   function importModal() {
     openModal(`
       <div class="modal-head"><h3>${T("m_import_title")}</h3><button class="x" data-close>&times;</button></div>
@@ -666,14 +710,17 @@
         <div class="field"><label>${T("import_pick")}</label><input type="file" id="impFile" accept=".csv,.xlsx,.xls,text/csv" /></div>
       </div>
       <div class="modal-foot"><button class="btn ghost" data-close>${T("cancel")}</button>
-        <button class="btn" id="impGo">${T("btn_import")}</button></div>`);
+        <button class="btn" id="impGo">${T("btn_preview")}</button></div>`);
     $("tplBtn").addEventListener("click", downloadTemplate);
     $("impGo").addEventListener("click", async () => {
       const f = $("impFile").files[0];
       if (!f) { showModalErr(T("import_none")); return; }
       const b = $("impGo"); b.disabled = true; b.innerHTML = '<span class="spin"></span> ' + T("creating");
-      try { await importStudentsFromFile(f); closeModal(); }
-      catch (e) { showModalErr(T("err_save") + e.message); b.disabled = false; b.textContent = T("btn_import"); }
+      try {
+        const valid = await parseImportFile(f);
+        if (!valid.length) { showModalErr(T("import_none")); b.disabled = false; b.textContent = T("btn_preview"); return; }
+        previewImport(valid);
+      } catch (e) { showModalErr(T("err_save") + e.message); b.disabled = false; b.textContent = T("btn_preview"); }
     });
   }
   function resetModal() {

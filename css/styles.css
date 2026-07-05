@@ -853,3 +853,9 @@ thead th.num-col { text-align: center; }
   .list-table td.prog-cell::before { text-align: start; }
   .list-table td.prog-cell .prog { width: 100%; }
 }
+
+/* CSV import preview (v68) */
+.imp-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.warn-row td { background: #fff7ea !important; }
+.warn-row td:first-child { box-shadow: inset 3px 0 0 var(--pending); }
+[dir="rtl"] .warn-row td:first-child { box-shadow: inset -3px 0 0 var(--pending); }
