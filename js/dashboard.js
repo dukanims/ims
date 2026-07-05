@@ -153,9 +153,10 @@
   function fmtDateTime(ts) {
     if (!ts) return "—";
     const d = ts.toDate ? ts.toDate() : new Date(ts);
-    const loc = window.getLang && window.getLang() === "ku" ? "ckb" : undefined;
-    try { return d.toLocaleString(loc, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
-    catch (e) { return d.toLocaleString(); }
+    const pad = (n) => String(n).padStart(2, "0");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let h = d.getHours(); const ampm = h < 12 ? "AM" : "PM"; h = h % 12 || 12;
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} · ${pad(h)}:${pad(d.getMinutes())} ${ampm}`;
   }
   function logHistory(studentDocId, dept, status) {
     try {
@@ -500,11 +501,19 @@
   function renderHistory() {
     const host = $("historyTable"); if (!host) return;
     const q = (($("historySearch") || {}).value || "").toLowerCase().trim();
-    const list = historyLog.filter((h) => !q ||
+    const df = ($("historyDeptFilter") || {}).value || "";
+    const dsel = $("historyDeptFilter");
+    if (dsel) {
+      const cur = dsel.value;
+      dsel.innerHTML = `<option value="">${T("all_departments")}</option>` +
+        departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(deptLabel(d))}</option>`).join("");
+      if ([...dsel.options].some((o) => o.value === cur)) dsel.value = cur;
+    }
+    const list = historyLog.filter((h) => (!df || h.departmentId === df) && (!q ||
       (h.studentName || "").toLowerCase().includes(q) ||
       String(h.studentNumber || "").toLowerCase().includes(q) ||
       (h.by || "").toLowerCase().includes(q) ||
-      deptLabel(h.departmentId).toLowerCase().includes(q));
+      deptLabel(h.departmentId).toLowerCase().includes(q)));
     if (!list.length) { host.innerHTML = emptyState(T("hist_empty_t"), T("hist_empty_s")); return; }
     const rows = list.map((h) => {
       const stCls = h.status === "Completed" ? "ok" : h.status === "Not Completed" ? "no" : "pending";
@@ -513,7 +522,7 @@
         <td data-label="${T("c_department")}">${escapeHtml(deptLabel(h.departmentId))}</td>
         <td data-label="${T("c_status")}"><span class="tag ${stCls}">${escapeHtml(statusLabel(h.status))}</span></td>
         <td data-label="${T("hist_by")}">${escapeHtml(h.by || "—")}</td>
-        <td class="muted" data-label="${T("hist_when")}">${h.at ? fmtDateTime(h.at) : "—"}</td></tr>`;
+        <td class="muted" data-label="${T("hist_when")}"><span class="id">${h.at ? fmtDateTime(h.at) : "—"}</span></td></tr>`;
     }).join("");
     host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_department")}</th><th>${T("c_status")}</th><th>${T("hist_by")}</th><th>${T("hist_when")}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
@@ -1086,6 +1095,7 @@
 
   $("studentSearch").addEventListener("input", renderStudents);
   { const h = $("historySearch"); if (h) h.addEventListener("input", renderHistory); }
+  { const hd = $("historyDeptFilter"); if (hd) hd.addEventListener("change", renderHistory); }
   { const mf = $("studentMajorFilter"); if (mf) mf.addEventListener("change", renderStudents); }
   { const sf = $("studentStageFilter"); if (sf) sf.addEventListener("change", renderStudents); }
   $("studentTimeFilter").addEventListener("change", renderStudents);
