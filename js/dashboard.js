@@ -5,7 +5,7 @@
   "use strict";
 
   let me = null, isAdmin = false;
-  let students = [], departments = [], accounts = [], internMap = {};
+  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [];
   let currentView = "overview", activeDept = "";
   const unsub = [];
 
@@ -89,6 +89,10 @@
         accounts = s.docs.map((d) => ({ uid: d.id, ...d.data() }));
         if (currentView === "accounts") renderAccounts();
       }));
+      unsub.push(db.collection("history").orderBy("at", "desc").limit(300).onSnapshot((s) => {
+        historyLog = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+        if (currentView === "history") renderHistory();
+      }, () => {}));
     }
   }
 
@@ -132,7 +136,7 @@
       departmentId: dept, status, note: status === "Completed" ? "" : noteOf(studentDocId, dept),
       date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
     };
-    try { await db.collection("internships").doc(key(studentDocId, dept)).set(rec, { merge: true }); toast(T("to_status_saved"), "ok"); }
+    try { await db.collection("internships").doc(key(studentDocId, dept)).set(rec, { merge: true }); logHistory(studentDocId, dept, status); toast(T("to_status_saved"), "ok"); }
     catch (e) { toast(T("err_save") + e.message, "err"); }
   }
   function statusTag(s) {
@@ -145,6 +149,23 @@
     const loc = window.getLang && window.getLang() === "ku" ? "ckb" : undefined;
     try { return d.toLocaleDateString(loc, { year: "numeric", month: "short", day: "numeric" }); }
     catch (e) { return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+  }
+  function fmtDateTime(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const loc = window.getLang && window.getLang() === "ku" ? "ckb" : undefined;
+    try { return d.toLocaleString(loc, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+    catch (e) { return d.toLocaleString(); }
+  }
+  function logHistory(studentDocId, dept, status) {
+    try {
+      const s = students.find((x) => x.id === studentDocId);
+      db.collection("history").add({
+        studentId: studentDocId, studentName: s ? s.name : "", studentNumber: s ? s.studentId : "",
+        departmentId: dept, status: status, by: me.username,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(() => {});
+    } catch (e) {}
   }
   function toast(msg, type) {
     const t = $("toast"); t.textContent = msg; t.className = "toast show " + (type || "");
@@ -163,6 +184,7 @@
       case "internships": renderInternships(); break;
       case "accounts": renderDepartments(); renderAccounts(); break;
       case "reports": renderReport(); break;
+      case "history": renderHistory(); break;
     }
   }
 
@@ -473,6 +495,27 @@
       ${tableHTML}
       </body></html>`);
     w.document.close();
+  }
+
+  function renderHistory() {
+    const host = $("historyTable"); if (!host) return;
+    const q = (($("historySearch") || {}).value || "").toLowerCase().trim();
+    const list = historyLog.filter((h) => !q ||
+      (h.studentName || "").toLowerCase().includes(q) ||
+      String(h.studentNumber || "").toLowerCase().includes(q) ||
+      (h.by || "").toLowerCase().includes(q) ||
+      deptLabel(h.departmentId).toLowerCase().includes(q));
+    if (!list.length) { host.innerHTML = emptyState(T("hist_empty_t"), T("hist_empty_s")); return; }
+    const rows = list.map((h) => {
+      const stCls = h.status === "Completed" ? "ok" : h.status === "Not Completed" ? "no" : "pending";
+      return `<tr>
+        <td class="name" data-label="${T("c_student")}">${escapeHtml(h.studentName || "—")}<div class="id">${escapeHtml(h.studentNumber || "")}</div></td>
+        <td data-label="${T("c_department")}">${escapeHtml(deptLabel(h.departmentId))}</td>
+        <td data-label="${T("c_status")}"><span class="tag ${stCls}">${escapeHtml(statusLabel(h.status))}</span></td>
+        <td data-label="${T("hist_by")}">${escapeHtml(h.by || "—")}</td>
+        <td class="muted" data-label="${T("hist_when")}">${h.at ? fmtDateTime(h.at) : "—"}</td></tr>`;
+    }).join("");
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_department")}</th><th>${T("c_status")}</th><th>${T("hist_by")}</th><th>${T("hist_when")}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function printStudentCard(s) {
@@ -891,7 +934,7 @@
         departmentId: dept, status, note: status === "Completed" ? "" : $("m_note").value.trim(),
         date: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: me.username
       };
-      try { await db.collection("internships").doc(key(student.id, dept)).set(rec, { merge: true }); closeModal(); toast(T("to_status_saved"), "ok"); }
+      try { await db.collection("internships").doc(key(student.id, dept)).set(rec, { merge: true }); logHistory(student.id, dept, status); closeModal(); toast(T("to_status_saved"), "ok"); }
       catch (e) { showModalErr(T("err_save") + e.message); }
     });
   }
@@ -975,7 +1018,8 @@
     const map = {
       overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
       internships: [isAdmin ? "t_internships" : "mydept_title", isAdmin ? "s_intern_admin" : "s_intern_dept"],
-      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""]
+      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""],
+      history: ["t_history", "s_history"]
     };
     const m = map[view] || ["", ""];
     $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]);
@@ -1041,6 +1085,7 @@
   $("logoutBtn").addEventListener("click", async () => { unsub.forEach((u) => u && u()); await auth.signOut(); window.location.replace("index.html"); });
 
   $("studentSearch").addEventListener("input", renderStudents);
+  { const h = $("historySearch"); if (h) h.addEventListener("input", renderHistory); }
   { const mf = $("studentMajorFilter"); if (mf) mf.addEventListener("change", renderStudents); }
   { const sf = $("studentStageFilter"); if (sf) sf.addEventListener("change", renderStudents); }
   $("studentTimeFilter").addEventListener("change", renderStudents);
