@@ -506,8 +506,10 @@
         .head .org{font-size:14px;opacity:.92;font-weight:600;}
         .head .org2{font-size:12.5px;opacity:.8;margin-top:2px;}
         .head h1{font-size:21px;margin:10px 0 0;}
-        .info{display:flex;flex-wrap:wrap;gap:14px 26px;padding:18px 22px;border-bottom:1px solid #eef1f6;}
-        .info div{font-size:14px;} .info b{color:#6a7488;font-weight:600;font-size:12px;display:block;margin-bottom:2px;}
+        .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;padding:0;border-bottom:1px solid #eef1f6;}
+        .info div{font-size:14px;padding:12px 18px;border-inline-start:1px solid #eef1f6;border-bottom:1px solid #eef1f6;}
+        .info div:first-child{border-inline-start:none;}
+        .info b{color:#6a7488;font-weight:600;font-size:11.5px;display:block;margin-bottom:4px;letter-spacing:.02em;}
         table{border-collapse:collapse;width:100%;font-size:13px;}
         th,td{border:1px solid #e2e6ef;padding:9px 12px;text-align:${rtl ? "right" : "left"};}
         th{background:#f5f7fb;color:#6a7488;font-size:12px;}
