@@ -448,12 +448,19 @@
         .tag.pending{background:#fbf1dc;color:#a9791c;}
         .id{direction:ltr;}
         td::before{display:none !important;}
-        @media print{body{padding:0;}}
+        .bar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:16px;position:sticky;top:0;}
+        .bar button{font-family:inherit;font-size:15px;font-weight:600;padding:11px 20px;border-radius:10px;border:1px solid #d7dded;cursor:pointer;}
+        .bar .go{background:#243b6b;color:#fff;border-color:#243b6b;}
+        .bar .cl{background:#fff;color:#15233f;}
+        @media print{body{padding:0;} .bar{display:none !important;}}
       </style></head><body>
+      <div class="bar">
+        <button class="go" onclick="window.print()">🖨️ ${escapeHtml(T("print") || "Print")}</button>
+        <button class="cl" onclick="window.close()">✕ ${escapeHtml(T("close") || "Close")}</button>
+      </div>
       <h1>${escapeHtml(title)}</h1>
       <div class="meta">${escapeHtml(T("brand_sub"))} · ${new Date().toLocaleString()}</div>
       ${tableHTML}
-      <script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script>
       </body></html>`);
     w.document.close();
   }
