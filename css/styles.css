@@ -871,7 +871,10 @@ button:disabled { cursor: not-allowed; }
 .modal-head .x:hover { color: var(--ink); }
 
 
-/* Mobile: keep the top-bar subtitle on a single line (no wrapping) (v81) */
+/* Mobile top bar: hide the subtitle and the (redundant) role chip so the
+   page title fits cleanly. No height/scroll changes — safe. (v82) */
 @media (max-width: 640px) {
-  .topbar .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58vw; }
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar .sub { display: none; }
+  .topbar #roleChip { display: none; }
 }
