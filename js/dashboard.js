@@ -259,6 +259,7 @@
       <td data-label="${T("c_stage")}">${escapeHtml(stageLabel(s.stage))}</td>
       <td data-label="${T("c_studytime")}"><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
       <td class="actions-cell"><div class="row-actions">
+        <button class="btn ghost sm" data-card-student="${s.id}">🖨️ ${T("card_btn")}</button>
         <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
         <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>
       </div></td></tr>`).join("");
@@ -474,6 +475,74 @@
     w.document.close();
   }
 
+  function printStudentCard(s) {
+    if (!s) return;
+    const rtl = !(window.getLang && window.getLang() === "en");
+    const rows = departments.map((d) => {
+      const st = statusOf(s.id, d);
+      const rec = internMap[key(s.id, d)];
+      const stCls = st === "Completed" ? "ok" : st === "Not Completed" ? "no" : "pending";
+      return `<tr>
+        <td>${escapeHtml(deptLabel(d))}</td>
+        <td><span class="tag ${stCls}">${escapeHtml(statusLabel(st))}</span></td>
+        <td>${escapeHtml(noteOf(s.id, d) || "—")}</td>
+        <td class="id">${rec && rec.date ? fmtDate(rec.date) : "—"}</td></tr>`;
+    }).join("");
+    const allCompleted = departments.length && departments.every((d) => statusOf(s.id, d) === "Completed");
+    const w = window.open("", "_blank");
+    if (!w) { toast(T("err_popup") || "Please allow pop-ups to print", "err"); return; }
+    w.document.write(`<!DOCTYPE html><html lang="${rtl ? "ckb" : "en"}" dir="${rtl ? "rtl" : "ltr"}"><head><meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${escapeHtml(s.name)} — ${escapeHtml(T("card_title"))}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        *{box-sizing:border-box;}
+        body{font-family:'Vazirmatn','Segoe UI',Tahoma,sans-serif;color:#15233f;margin:0;padding:26px;}
+        .bar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:18px;}
+        .bar button{font-family:inherit;font-size:15px;font-weight:600;padding:11px 20px;border-radius:10px;border:1px solid #d7dded;cursor:pointer;background:#fff;}
+        .bar .go{background:#243b6b;color:#fff;border-color:#243b6b;}
+        .card{max-width:720px;margin:0 auto;border:1px solid #d7dded;border-radius:14px;overflow:hidden;}
+        .head{background:#243b6b;color:#fff;padding:18px 22px;}
+        .head .org{font-size:13px;opacity:.85;}
+        .head h1{font-size:20px;margin:4px 0 0;}
+        .head .sub{font-size:13px;opacity:.85;margin-top:2px;}
+        .info{display:flex;flex-wrap:wrap;gap:14px 26px;padding:18px 22px;border-bottom:1px solid #eef1f6;}
+        .info div{font-size:14px;} .info b{color:#6a7488;font-weight:600;font-size:12px;display:block;margin-bottom:2px;}
+        table{border-collapse:collapse;width:100%;font-size:13px;}
+        th,td{border:1px solid #e2e6ef;padding:9px 12px;text-align:${rtl ? "right" : "left"};}
+        th{background:#f5f7fb;color:#6a7488;font-size:12px;}
+        .tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600;}
+        .tag.ok{background:#e7f4ed;color:#1f8a52;} .tag.no{background:#fbe9e7;color:#c33a2c;} .tag.pending{background:#fbf1dc;color:#a9791c;}
+        .id{direction:ltr;}
+        .overall{padding:16px 22px;font-size:14px;}
+        .sign{display:flex;justify-content:space-between;gap:40px;padding:40px 22px 18px;}
+        .sign div{flex:1;border-top:1px solid #333;padding-top:6px;font-size:12px;color:#555;text-align:center;}
+        @media print{body{padding:0;} .bar{display:none !important;} .card{border:none;max-width:none;border-radius:0;}}
+      </style></head><body>
+      <div class="bar">
+        <button class="go" onclick="window.print()">🖨️ ${escapeHtml(T("print"))}</button>
+        <button onclick="window.close()">✕ ${escapeHtml(T("close"))}</button>
+      </div>
+      <div class="card">
+        <div class="head">
+          <div class="org">${escapeHtml(T("org_top"))}</div>
+          <h1>${escapeHtml(T("card_title"))}</h1>
+          <div class="sub">${escapeHtml(T("brand_sub"))}</div>
+        </div>
+        <div class="info">
+          <div><b>${escapeHtml(T("c_fullname"))}</b>${escapeHtml(s.name)}</div>
+          <div><b>${escapeHtml(T("c_studentid"))}</b><span class="id">${escapeHtml(s.studentId)}</span></div>
+          <div><b>${escapeHtml(T("c_major"))}</b>${escapeHtml(majorLabel(s.major))}</div>
+          <div><b>${escapeHtml(T("c_stage"))}</b>${escapeHtml(stageLabel(s.stage))}</div>
+          <div><b>${escapeHtml(T("c_studytime"))}</b>${escapeHtml(timeLabel(s.time))}</div>
+        </div>
+        <table><thead><tr><th>${escapeHtml(T("c_department"))}</th><th>${escapeHtml(T("c_status"))}</th><th>${escapeHtml(T("c_note"))}</th><th>${escapeHtml(T("c_updated"))}</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="overall">${escapeHtml(T("card_overall"))}: <span class="tag ${allCompleted ? "ok" : "pending"}">${escapeHtml(allCompleted ? T("card_cleared") : T("card_notcleared"))}</span></div>
+        <div class="sign"><div>${escapeHtml(T("card_sign_student"))}</div><div>${escapeHtml(T("card_sign_official"))}</div></div>
+      </div>
+      </body></html>`);
+    w.document.close();
+  }
   // ---------- BACKUP / RESET / IMPORT (admin) ----------
   function backupAll() {
     const data = {
@@ -914,6 +983,8 @@
   document.addEventListener("click", (e) => {
     const t = e.target;
     if (t.closest("[data-close]")) { closeModal(); return; }
+    const cardS = t.closest("[data-card-student]");
+    if (cardS) { printStudentCard(students.find((s) => s.id === cardS.dataset.cardStudent)); return; }
     const editS = t.closest("[data-edit-student]");
     if (editS) { studentModal(students.find((s) => s.id === editS.dataset.editStudent)); return; }
     const delS = t.closest("[data-del-student]");
