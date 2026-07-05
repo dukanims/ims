@@ -896,3 +896,20 @@ button:disabled { cursor: not-allowed; }
   .backup-reminder { flex-wrap: wrap; }
   .backup-reminder .btn { flex: 1 1 100%; }
 }
+
+/* Headings/labels use a normal (arrow) cursor, not the text I-beam (v86) */
+h1, h2, h3, h4, h5, h6,
+.modal-head h3, .section-head h2, .eyebrow, .eyebrow-l,
+.card-head h3, thead th, label, .tag, .chip, .badge {
+  cursor: default;
+}
+
+/* Modal titles/body are not selectable — no text (I-beam) cursor (v86) */
+.modal-head, .modal-head h3, .modal-body, .modal-body p, .modal-foot,
+.modal-body label {
+  cursor: default; -webkit-user-select: none; -moz-user-select: none; user-select: none;
+}
+.modal-body input, .modal-body select, .modal-body textarea {
+  cursor: text; -webkit-user-select: text; user-select: text;
+}
+.modal-body select { cursor: pointer; }
