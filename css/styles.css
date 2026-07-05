@@ -859,3 +859,8 @@ thead th.num-col { text-align: center; }
 .warn-row td { background: #fff7ea !important; }
 .warn-row td:first-child { box-shadow: inset 3px 0 0 var(--pending); }
 [dir="rtl"] .warn-row td:first-child { box-shadow: inset -3px 0 0 var(--pending); }
+
+/* Wider modal for the import preview (v69) */
+.modal.xwide { max-width: min(960px, 94vw); }
+.modal.xwide .table-wrap table { min-width: 0; font-size: 13px; }
+.modal.xwide .table-wrap th, .modal.xwide .table-wrap td { white-space: nowrap; }

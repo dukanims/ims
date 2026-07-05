@@ -684,7 +684,7 @@
           <span class="tag pending">${T("imp_update")}: ${updCount}</span>
           ${warn ? `<span class="tag no">${T("imp_warn")}: ${warn}</span>` : ""}
         </div>
-        <div class="table-wrap" style="max-height:48vh;overflow:auto;margin-top:12px;">
+        <div class="table-wrap" style="max-height:62vh;overflow:auto;margin-top:12px;">
           <table><thead><tr><th>#</th><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th>${T("imp_action")}</th></tr></thead>
           <tbody>${rowsHtml}</tbody></table>
         </div>
@@ -693,7 +693,7 @@
       <div class="modal-foot">
         <button class="btn ghost" data-close>${T("cancel")}</button>
         <button class="btn" id="impConfirm">${T("imp_confirm")} (${valid.length})</button>
-      </div>`);
+      </div>`, "xwide");
     $("impConfirm").addEventListener("click", async () => {
       const b = $("impConfirm"); b.disabled = true; b.innerHTML = '<span class="spin"></span> ' + T("creating");
       try { await commitImport(valid); closeModal(); }
@@ -742,7 +742,7 @@
   }
 
   // ---------- MODALS ----------
-  function openModal(html, wide) { $("modal").className = "modal" + (wide ? " wide" : ""); $("modal").innerHTML = html; $("modalBg").classList.add("show"); }
+  function openModal(html, extra) { $("modal").className = "modal" + (extra ? (extra === true ? " wide" : " " + extra) : ""); $("modal").innerHTML = html; $("modalBg").classList.add("show"); }
   function closeModal() { $("modalBg").classList.remove("show"); $("modal").innerHTML = ""; }
   function showModalErr(msg) { const e = $("mErr"); if (e) { e.textContent = msg; e.classList.add("show"); } }
   $("modalBg").addEventListener("click", (e) => { if (e.target === $("modalBg")) closeModal(); });
