@@ -502,10 +502,10 @@
         .bar button{font-family:inherit;font-size:15px;font-weight:600;padding:11px 20px;border-radius:10px;border:1px solid #d7dded;cursor:pointer;background:#fff;}
         .bar .go{background:#243b6b;color:#fff;border-color:#243b6b;}
         .card{max-width:720px;margin:0 auto;border:1px solid #d7dded;border-radius:14px;overflow:hidden;}
-        .head{background:#243b6b;color:#fff;padding:18px 22px;}
-        .head .org{font-size:13px;opacity:.85;}
-        .head h1{font-size:20px;margin:4px 0 0;}
-        .head .sub{font-size:13px;opacity:.85;margin-top:2px;}
+        .head{background:#243b6b;color:#fff;padding:20px 22px;text-align:center;}
+        .head .org{font-size:14px;opacity:.92;font-weight:600;}
+        .head .org2{font-size:12.5px;opacity:.8;margin-top:2px;}
+        .head h1{font-size:21px;margin:10px 0 0;}
         .info{display:flex;flex-wrap:wrap;gap:14px 26px;padding:18px 22px;border-bottom:1px solid #eef1f6;}
         .info div{font-size:14px;} .info b{color:#6a7488;font-weight:600;font-size:12px;display:block;margin-bottom:2px;}
         table{border-collapse:collapse;width:100%;font-size:13px;}
@@ -525,9 +525,9 @@
       </div>
       <div class="card">
         <div class="head">
-          <div class="org">${escapeHtml(T("org_top"))}</div>
+          <div class="org">${escapeHtml(T("card_org1"))}</div>
+          <div class="org2">${escapeHtml(T("card_org2"))}</div>
           <h1>${escapeHtml(T("card_title"))}</h1>
-          <div class="sub">${escapeHtml(T("brand_sub"))}</div>
         </div>
         <div class="info">
           <div><b>${escapeHtml(T("c_fullname"))}</b>${escapeHtml(s.name)}</div>
@@ -537,8 +537,7 @@
           <div><b>${escapeHtml(T("c_studytime"))}</b>${escapeHtml(timeLabel(s.time))}</div>
         </div>
         <table><thead><tr><th>${escapeHtml(T("c_department"))}</th><th>${escapeHtml(T("c_status"))}</th><th>${escapeHtml(T("c_note"))}</th><th>${escapeHtml(T("c_updated"))}</th></tr></thead><tbody>${rows}</tbody></table>
-        <div class="overall">${escapeHtml(T("card_overall"))}: <span class="tag ${allCompleted ? "ok" : "pending"}">${escapeHtml(allCompleted ? T("card_cleared") : T("card_notcleared"))}</span></div>
-        <div class="sign"><div>${escapeHtml(T("card_sign_student"))}</div><div>${escapeHtml(T("card_sign_official"))}</div></div>
+        <div class="overall"><span class="tag ${allCompleted ? "ok" : "pending"}">${escapeHtml(allCompleted ? T("card_cleared") : T("card_notcleared"))}</span></div>
       </div>
       </body></html>`);
     w.document.close();
