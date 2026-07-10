@@ -35,7 +35,7 @@
     setupRoleUI();
     if (isAdmin) await ensureDepartmentsSeeded();
     attachListeners();
-    navigate("overview");
+    navigate(isDirector ? "reports" : "overview");
     $("app").style.visibility = "visible";
   });
 
@@ -49,6 +49,7 @@
   function setupRoleUI() {
     document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = isAdmin ? "" : "none"));
     document.querySelectorAll("[data-viewall]").forEach((el) => (el.style.display = canViewAll ? "" : "none"));
+    document.querySelectorAll("[data-director-hide]").forEach((el) => { if (isDirector) el.style.display = "none"; });
     if (me.role === "department") {
       const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
       const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
@@ -91,15 +92,13 @@
         accounts = s.docs.map((d) => ({ uid: d.id, ...d.data() }));
         if (currentView === "accounts") renderAccounts();
       }));
-      unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
-        lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
-        renderBackupReminder();
-      }, () => {}));
-    }
-    if (isAdmin || isDirector) {
       unsub.push(db.collection("history").orderBy("at", "desc").limit(300).onSnapshot((s) => {
         historyLog = s.docs.map((d) => ({ id: d.id, ...d.data() }));
         if (currentView === "history") renderHistory();
+      }, () => {}));
+      unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
+        lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
+        renderBackupReminder();
       }, () => {}));
     }
   }

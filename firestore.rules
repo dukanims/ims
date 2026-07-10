@@ -106,7 +106,7 @@ service cloud.firestore {
     // Only admins can read the log; entries are immutable (admins may
     // delete from the console if needed).
     match /history/{id} {
-      allow read: if isAdmin() || isDirector();
+      allow read: if isAdmin();
       allow create: if isSignedIn();
       allow update: if false;
       allow delete: if isAdmin();

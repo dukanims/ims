@@ -24,12 +24,15 @@ deployable on **GitHub Pages** with no build step.
 - Can only edit their own department's records — never another department's data.
 
 **Institute Director** (new, read-only)
-- Signs in separately, sees **every** department's data (Overview, Students, Internships,
-  Reports, History) exactly like an admin — but cannot add, edit, delete, or mark anything.
+- Signs in separately. The only item in their menu is **Reports** — they see the full,
+  cross-department report (with the department and major filters, print, and CSV export),
+  exactly what an admin sees on that page.
+- They have **no** access to Overview, Students, Internships, Departments & Accounts, or
+  History, and cannot add, edit, delete, or mark anything anywhere.
 - Created the same way as any other login: admin → **Departments & Accounts** → **+ Create
   account** → choose role **Institute Director**.
-- Enforced server-side: the Firestore rules give this role read access everywhere and no
-  write access anywhere.
+- Enforced server-side: the Firestore rules only grant this role read access to what the
+  Reports page needs (students, departments, internships) — nothing else, and no writes.
 
 **Students** have no login. Each student can hold an independent internship record in
 multiple departments.
