@@ -50,7 +50,7 @@
     document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = isAdmin ? "" : "none"));
     document.querySelectorAll("[data-viewall]").forEach((el) => (el.style.display = canViewAll ? "" : "none"));
     document.querySelectorAll("[data-director-hide]").forEach((el) => { if (isDirector) el.style.display = "none"; });
-    if (me.role === "department") {
+    if (me.role === "department" || me.role === "director") {
       const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
       const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
       // Department accounts are Kurdish-only: force Kurdish and remove the toggle.
