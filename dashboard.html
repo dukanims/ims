@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=86" />
+  <link rel="stylesheet" href="css/styles.css?v=87" />
 </head>
 <body>
   <div class="app" id="app" style="visibility:hidden;">
@@ -28,7 +28,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
           <span data-i18n="nav_overview">Overview</span>
         </a>
-        <a href="#students" data-view="students" data-admin>
+        <a href="#students" data-view="students" data-viewall>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span data-i18n="nav_students">Students</span>
         </a>
@@ -48,7 +48,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
           <span data-i18n="nav_reports">Reports</span>
         </a>
-        <a href="#history" data-view="history" data-admin>
+        <a href="#history" data-view="history" data-viewall>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
           <span data-i18n="nav_history">History</span>
         </a>
@@ -101,8 +101,8 @@
               <h2 style="margin-top:2px;" data-i18n="h_all_students">All students</h2>
             </div>
             <div class="spacer"></div>
-            <button class="btn ghost" id="importStudentsBtn" data-i18n="import_students">+ Import (CSV)</button>
-            <button class="btn" id="addStudentBtn" data-i18n="add_student">+ Add student</button>
+            <button class="btn ghost" id="importStudentsBtn" data-admin data-i18n="import_students">+ Import (CSV)</button>
+            <button class="btn" id="addStudentBtn" data-admin data-i18n="add_student">+ Add student</button>
             <input type="file" id="importFile" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" />
           </div>
           <div class="card">
@@ -135,7 +135,8 @@
             <div class="card-head">
               <div class="toolbar">
                 <input class="search" id="internSearch" type="search" data-i18n-ph="ph_search_only" placeholder="Search student…" />
-                <select id="internDeptFilter" data-admin></select>
+                <select id="internDeptFilter" data-viewall></select>
+                <select id="internMajorFilter"><option value="" data-i18n="all_majors">All departments</option></select>
                 <select id="internStatusFilter">
                   <option value="" data-i18n="all_statuses">All statuses</option>
                   <option value="Completed" data-i18n="s_completed">Completed</option>
@@ -191,7 +192,8 @@
               <h2 style="margin-top:2px;" id="reportHeading">Internship report</h2>
             </div>
             <div class="spacer"></div>
-            <select id="reportDeptFilter" data-admin></select>
+            <select id="reportDeptFilter" data-viewall></select>
+            <select id="reportMajorFilter"><option value="" data-i18n="all_majors">All departments</option></select>
             <select id="reportStatusFilter">
               <option value="" data-i18n="all_statuses">All statuses</option>
               <option value="Completed" data-i18n="s_completed">Completed</option>
@@ -199,7 +201,7 @@
               <option value="Pending" data-i18n="s_pending">Pending</option>
             </select>
             <button class="btn ghost" id="printBtn" data-i18n="print">Print</button>
-            <button class="btn gold" id="csvBtn" data-admin data-i18n="export_csv">Export CSV</button>
+            <button class="btn gold" id="csvBtn" data-viewall data-i18n="export_csv">Export CSV</button>
           </div>
           <div id="reportAnalytics"></div>
           <div class="card">
@@ -234,8 +236,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/i18n.js?v=86"></script>
-  <script src="js/firebase-config.js?v=86"></script>
-  <script src="js/dashboard.js?v=86"></script>
+  <script src="js/i18n.js?v=87"></script>
+  <script src="js/firebase-config.js?v=87"></script>
+  <script src="js/dashboard.js?v=87"></script>
 </body>
 </html>

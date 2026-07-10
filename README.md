@@ -23,8 +23,27 @@ deployable on **GitHub Pages** with no build step.
 - Mark each student **Completed** / **Not Completed** (plus a default **Pending**) and add notes.
 - Can only edit their own department's records — never another department's data.
 
+**Institute Director** (new, read-only)
+- Signs in separately, sees **every** department's data (Overview, Students, Internships,
+  Reports, History) exactly like an admin — but cannot add, edit, delete, or mark anything.
+- Created the same way as any other login: admin → **Departments & Accounts** → **+ Create
+  account** → choose role **Institute Director**.
+- Enforced server-side: the Firestore rules give this role read access everywhere and no
+  write access anywhere.
+
 **Students** have no login. Each student can hold an independent internship record in
 multiple departments.
+
+---
+
+## Filtering by major / department (level)
+
+Both the **Internships** and **Reports** views now have a **major/department filter**
+(alongside the existing status filter), so any signed-in user — admin, director, or a
+department account — can narrow the list down to one major (e.g. IT, Accounting) and
+immediately see a small summary line with the Completed / Not Completed / Pending counts
+for that selection. This answers questions like "how many IT students are still pending in
+this department?" without needing to export a report.
 
 ---
 
@@ -62,6 +81,10 @@ it only turns a username like `finance` into `finance@ims.local` for Firebase Au
 ## 3. Publish the security rules
 
 In **Firestore Database → Rules**, paste the contents of `firestore.rules` and **Publish**.
+
+> Already have this project deployed? The rules file now includes the **Institute
+> Director** role — re-paste and re-publish `firestore.rules` or the new role won't be
+> able to read any data.
 
 ## 4. Create the Super Admin (one time)
 
@@ -112,7 +135,7 @@ then sign in at `index.html` with just their username.
 
 | Collection      | Document fields |
 |-----------------|-----------------|
-| `users`         | `username`, `role` (`admin` \| `department`), `department` |
+| `users`         | `username`, `role` (`admin` \| `department` \| `director`), `department` |
 | `students`      | `name`, `studentId`, `major`, `stage`, `time` (`Morning` \| `Evening`) |
 | `departments`   | `name` |
 | `internships`   | `studentId` (student doc ref), `studentNumber`, `studentName`, `departmentId`, `status`, `note`, `date`, `updatedBy` |

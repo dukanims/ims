@@ -10,7 +10,7 @@
       app_name: "Student Clearance Management System",
       org_top: "Sulaimani Polytechnic University", org_sub: "Dukan Technical Institute", sys_name: "Student Clearance Management System",
       hero_tag: "A single, unified record for student clearance across every department.", hero_kicker: "Clearance Platform", show_password: "Show password", hide_password: "Hide password",
-      super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} unit",
+      super_admin: "Super Admin", administrator: "Administrator", department_role: "{d} unit", institute_director: "Institute Director",
       sign_out: "Sign out", cancel: "Cancel", you: "you",
       lang_label: "کوردی",
 
@@ -129,7 +129,7 @@
       btn_add_dept: "Add department", err_deptname: "Enter a department name.", err_dept_exists: "That department already exists.",
 
       // modals - account
-      m_create_account: "Create login account", f_role: "Role", role_dept: "Department", role_admin: "Administrator",
+      m_create_account: "Create login account", f_role: "Role", role_dept: "Department", role_admin: "Administrator", role_director: "Institute Director",
       f_dept: "Department", signin_becomes: "They sign in with this name. It becomes {e}.",
       ph_pass6: "At least 6 characters", btn_create_account: "Create account", creating: "Creating…",
       err_user_pass: "Username and password are required.", err_pass6: "Password must be at least 6 characters.",
@@ -168,7 +168,7 @@
       app_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       org_top: "سەرۆکایەتی زانکۆی پۆلیتەکنیکی سلێمانی", org_sub: "پەیمانگای تەکنیکی دوکان", sys_name: "سیستەمی بەڕێوەبردنی ئەستۆپاکی خوێندکاران",
       hero_tag: "تۆمارێکی یەکگرتوو بۆ ئەستۆپاکی خوێندکاران لە هەموو هۆبەکاندا.", hero_kicker: "سیستەمی ئەستۆپاکی", show_password: "پیشاندانی وشەی نهێنی", hide_password: "شاردنەوەی وشەی نهێنی",
-      super_admin: "بەڕێوەبەری سەرەکی", administrator: "بەڕێوەبەر", department_role: "هۆبەی {d}",
+      super_admin: "بەڕێوەبەری سەرەکی", administrator: "بەڕێوەبەر", department_role: "هۆبەی {d}", institute_director: "ڕاگری پەیمانگا",
       sign_out: "چوونەدەرەوە", cancel: "هەڵوەشاندنەوە", you: "تۆ",
       lang_label: "English",
 
@@ -274,7 +274,7 @@
       m_add_dept: "زیادکردنی بەش", f_deptname: "ناوی بەش", ph_deptname: "وەک سەرچاوەی مرۆیی",
       btn_add_dept: "زیادکردنی بەش", err_deptname: "ناوی بەش بنووسە.", err_dept_exists: "ئەم بەشە پێشتر هەیە.",
 
-      m_create_account: "دروستکردنی هەژماری چوونەژوورەوە", f_role: "ڕۆڵ", role_dept: "بەش", role_admin: "بەڕێوەبەر",
+      m_create_account: "دروستکردنی هەژماری چوونەژوورەوە", f_role: "ڕۆڵ", role_dept: "بەش", role_admin: "بەڕێوەبەر", role_director: "ڕاگری پەیمانگا",
       f_dept: "بەش", signin_becomes: "بەم ناوە دەچنە ژوورەوە. دەبێت بە {e}.",
       ph_pass6: "لانیکەم ٦ پیت", btn_create_account: "دروستکردنی هەژمار", creating: "دروستکردن…",
       err_user_pass: "ناوی بەکارهێنەر و وشەی نهێنی پێویستن.", err_pass6: "وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت.",

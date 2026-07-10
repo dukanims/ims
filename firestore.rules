@@ -24,6 +24,15 @@ service cloud.firestore {
         && profile().role == 'admin';
     }
 
+    // True only if the caller has a profile AND its role is 'director'.
+    // Directors can read everything (all departments, all data) but can
+    // never write/create/update/delete anything — pure oversight role.
+    function isDirector() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().role == 'director';
+    }
+
     // True if the caller has a profile with a (non-empty) department.
     function isDeptUser() {
       return isSignedIn()
@@ -73,7 +82,7 @@ service cloud.firestore {
     //         stays in their department (no hijacking another department).
     // DELETE: admins only.
     match /internships/{recordId} {
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isDirector()
         || (isDeptUser() && resource.data.departmentId == myDept());
 
       allow create: if isAdmin()
@@ -97,7 +106,7 @@ service cloud.firestore {
     // Only admins can read the log; entries are immutable (admins may
     // delete from the console if needed).
     match /history/{id} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || isDirector();
       allow create: if isSignedIn();
       allow update: if false;
       allow delete: if isAdmin();
