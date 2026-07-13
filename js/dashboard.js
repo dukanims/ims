@@ -36,7 +36,7 @@
     setupRoleUI();
     if (isAdmin) await ensureDepartmentsSeeded();
     attachListeners();
-    navigate("overview");
+    navigate(isRagr ? "reports" : "overview");
     $("app").style.visibility = "visible";
   });
 
@@ -54,6 +54,11 @@
         // Dean can browse every department (read-only) — re-show the filters only.
         const idf = $("internDeptFilter"); if (idf) idf.style.display = "";
         const rdf = $("reportDeptFilter"); if (rdf) rdf.style.display = "";
+        // Dean sees ONLY the report: hide Overview + Internships links and group labels.
+        document.querySelectorAll('.nav a[data-view="overview"], .nav a[data-view="internships"]').forEach((el) => (el.style.display = "none"));
+        document.querySelectorAll(".nav .nav-label").forEach((el) => (el.style.display = "none"));
+        const rp = document.querySelector('.nav a[data-view="reports"] span'); if (rp) { rp.removeAttribute("data-i18n"); rp.textContent = T("ragr_report"); }
+        const ey = document.querySelector("#view-reports .eyebrow-l"); if (ey) ey.style.display = "none";
       } else {
         const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
         const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
@@ -425,7 +430,7 @@
     const viewAll = isAdmin || isRagr;
     const filterDept = viewAll ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
-    $("reportHeading").textContent = !viewAll ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
+    $("reportHeading").textContent = (!viewAll || isRagr) ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
     renderAnalytics(filterDept);
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), viewAll ? T("e_norep_s") : ""); return; }
     if (viewAll && !filterDept) {
@@ -1094,7 +1099,8 @@
       history: ["t_history", "s_history"]
     };
     const m = map[view] || ["", ""];
-    $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]);
+    if (isRagr && view === "reports") { $("pageTitle").textContent = T("ragr_report"); $("pageSub").textContent = ""; }
+    else { $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]); }
     refresh();
   }
 
