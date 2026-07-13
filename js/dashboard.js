@@ -330,9 +330,10 @@
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
     const mf = !isRagr ? fillMajorSelect($("internMajorFilter")) : "";
+    const tf = isAdmin ? (($("internTimeFilter") || {}).value || "") : "";
     const list = students.filter((s) => {
       const st = statusOf(s.id, dept);
-      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf) && (!mf || s.major === mf);
+      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf) && (!mf || s.major === mf) && (!tf || s.time === tf);
     });
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
     const rows = list.map((s) => {
@@ -1197,6 +1198,7 @@
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
   $("internMajorFilter").addEventListener("change", renderInternships);
+  $("internTimeFilter").addEventListener("change", renderInternships);
   $("reportMajorFilter").addEventListener("change", renderReport);
   $("reportTimeFilter").addEventListener("change", renderReport);
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
