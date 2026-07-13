@@ -4,8 +4,8 @@
 (function () {
   "use strict";
 
-  let me = null, isAdmin = false, isDirector = false, canViewAll = false, canEdit = false;
-  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null;
+  let me = null, isAdmin = false;
+  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null, backupSnoozedAt = null;
   let currentView = "overview", activeDept = "";
   const unsub = [];
 
@@ -29,13 +29,12 @@
     if (!user) { window.location.replace("index.html"); return; }
     const profile = await getUserProfile(user.uid);
     if (!profile) { await auth.signOut(); window.location.replace("index.html"); return; }
-    me = profile; isAdmin = profile.role === "admin"; isDirector = profile.role === "director";
-    canViewAll = isAdmin || isDirector; canEdit = !isDirector;
-    activeDept = canViewAll ? "" : profile.department;
+    me = profile; isAdmin = profile.role === "admin";
+    activeDept = isAdmin ? "" : profile.department;
     setupRoleUI();
     if (isAdmin) await ensureDepartmentsSeeded();
     attachListeners();
-    navigate(isDirector ? "reports" : "overview");
+    navigate("overview");
     $("app").style.visibility = "visible";
   });
 
@@ -47,10 +46,8 @@
   };
 
   function setupRoleUI() {
-    document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = isAdmin ? "" : "none"));
-    document.querySelectorAll("[data-viewall]").forEach((el) => (el.style.display = canViewAll ? "" : "none"));
-    document.querySelectorAll("[data-director-hide]").forEach((el) => { if (isDirector) el.style.display = "none"; });
-    if (me.role === "department" || me.role === "director") {
+    if (!isAdmin) {
+      document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = "none"));
       const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
       const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
       // Department accounts are Kurdish-only: force Kurdish and remove the toggle.
@@ -63,8 +60,8 @@
   }
   function updateRoleText() {
     $("sideName").textContent = me.username;
-    $("sideRole").textContent = isAdmin ? T("administrator") : isDirector ? T("institute_director") : deptLabel(me.department);
-    $("roleChip").textContent = isAdmin ? T("super_admin") : isDirector ? T("institute_director") : T("department_role", { d: deptLabel(me.department) });
+    $("sideRole").textContent = isAdmin ? T("administrator") : deptLabel(me.department);
+    $("roleChip").textContent = isAdmin ? T("super_admin") : T("department_role", { d: deptLabel(me.department) });
   }
 
   // ---------- LISTENERS ----------
@@ -76,11 +73,11 @@
     }));
     unsub.push(db.collection("departments").onSnapshot((s) => {
       departments = s.docs.map((d) => d.data().name).sort();
-      if (!canViewAll) departments = [me.department];
-      if (canViewAll && !activeDept && departments.length) activeDept = departments[0];
+      if (!isAdmin) departments = [me.department];
+      if (isAdmin && !activeDept && departments.length) activeDept = departments[0];
       populateDeptSelectors(); refresh();
     }));
-    const internQuery = canViewAll
+    const internQuery = isAdmin
       ? db.collection("internships")
       : db.collection("internships").where("departmentId", "==", me.department);
     unsub.push(internQuery.onSnapshot((s) => {
@@ -98,6 +95,7 @@
       }, () => {}));
       unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
         lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
+        backupSnoozedAt = (d.exists && d.data().snoozedAt) ? d.data().snoozedAt : null;
         renderBackupReminder();
       }, () => {}));
     }
@@ -207,7 +205,7 @@
   }
   function renderStats() {
     const grid = $("statGrid");
-    if (canViewAll) {
+    if (isAdmin) {
       let completed = 0, total = 0;
       students.forEach((s) => departments.forEach((d) => { total++; if (statusOf(s.id, d) === "Completed") completed++; }));
       grid.innerHTML = stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students }) +
@@ -231,7 +229,7 @@
   }
   function renderOverview() {
     const host = $("ovTable");
-    if (canViewAll) {
+    if (isAdmin) {
       $("ovTableTitle").textContent = T("ov_glance");
       if (!departments.length) { host.innerHTML = emptyState(T("e_nodepts_t"), T("e_nodepts_s")); return; }
       const rows = departments.map((d) => {
@@ -290,61 +288,43 @@
       <td data-label="${T("c_studytime")}"><span class="chip">${escapeHtml(timeLabel(s.time))}</span></td>
       <td class="actions-cell"><div class="row-actions">
         <button class="btn ghost sm" data-card-student="${s.id}">🖨️ ${T("card_btn")}</button>
-        ${isAdmin ? `<button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
-        <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>` : ""}
+        <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
+        <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>
       </div></td></tr>`).join("");
     host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderInternships() {
-    const dept = canViewAll ? activeDept : me.department;
-    if (canViewAll) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
+    const dept = isAdmin ? activeDept : me.department;
+    if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
     else { $("internHeading").textContent = ""; }
     const host = $("internTable");
-    if (canViewAll && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
-    if (!students.length) { host.innerHTML = emptyState(canViewAll ? T("e_nostudents_t") : T("e_nostud_dept_s"), canViewAll ? T("e_nostud_admin_s") : ""); return; }
+    if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
+    if (!students.length) { host.innerHTML = emptyState(isAdmin ? T("e_nostudents_t") : T("e_nostud_dept_s"), isAdmin ? T("e_nostud_admin_s") : ""); return; }
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
-    const mf = ($("internMajorFilter") || {}).value || "";
-    const msel = $("internMajorFilter");
-    if (msel) {
-      const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
-      const cur = msel.value;
-      msel.innerHTML = `<option value="">${T("all_majors")}</option>` +
-        MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
-        extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
-      if ([...msel.options].some((o) => o.value === cur)) msel.value = cur;
-    }
     const list = students.filter((s) => {
       const st = statusOf(s.id, dept);
-      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) &&
-        (!sf || st === sf) && (!mf || s.major === mf);
+      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf);
     });
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
-    let doneN = 0, noN = 0, pendN = 0;
-    list.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") doneN++; else if (st === "Not Completed") noN++; else pendN++; });
-    const summary = `<div class="muted" style="padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border);">
-      ${T("st_students")}: <b class="tnum">${list.length}</b> &nbsp;·&nbsp;
-      ${T("st_completed")}: <b class="tnum">${doneN}</b> &nbsp;·&nbsp;
-      ${T("st_notcompleted")}: <b class="tnum">${noN}</b> &nbsp;·&nbsp;
-      ${T("st_pending")}: <b class="tnum">${pendN}</b></div>`;
     const rows = list.map((s) => {
       const r = internMap[key(s.id, dept)];
       const cur = statusOf(s.id, dept);
-      const actions = canEdit ? `
-          <button class="btn sm ${cur === "Completed" ? "" : "ghost"}" data-quick="${s.id}" data-status="Completed">${T("s_completed")}</button>
-          <button class="btn sm ${cur === "Not Completed" ? "danger" : "ghost"}" data-quick="${s.id}" data-status="Not Completed">${T("s_notcompleted")}</button>
-          <button class="btn ghost sm" data-mark="${s.id}">${T("btn_note")}</button>` : "";
       return `<tr>
         <td data-label="${T("c_student")}"><div class="name">${escapeHtml(s.name)}</div><div class="id">${s.major ? escapeHtml(majorLabel(s.major)) : ""}${s.stage ? " · " + escapeHtml(stageLabel(s.stage)) : ""}</div></td>
         <td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
         <td data-label="${T("c_status")}">${statusTag(cur)}</td>
         <td class="note-text" data-label="${T("c_note")}">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
         <td class="muted" data-label="${T("c_updated")}">${r ? fmtDate(r.date) : "—"}</td>
-        <td class="actions-cell"><div class="row-actions">${actions}</div></td>
+        <td class="actions-cell"><div class="row-actions">
+          <button class="btn sm ${cur === "Completed" ? "" : "ghost"}" data-quick="${s.id}" data-status="Completed">${T("s_completed")}</button>
+          <button class="btn sm ${cur === "Not Completed" ? "danger" : "ghost"}" data-quick="${s.id}" data-status="Not Completed">${T("s_notcompleted")}</button>
+          <button class="btn ghost sm" data-mark="${s.id}">${T("btn_note")}</button>
+        </div></td>
       </tr>`;
     }).join("");
-    host.innerHTML = summary + `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderDepartments() {
@@ -364,7 +344,7 @@
     if (!accounts.length) { host.innerHTML = emptyState(T("e_noacc_t"), T("e_noacc_s")); return; }
     const rows = accounts.slice().sort((a, b) => (a.role || "").localeCompare(b.role || "")).map((a) => `<tr>
       <td class="name">${escapeHtml(a.username)}</td>
-      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : a.role === "director" ? `<span class="tag" style="background:#e7edfb;color:#243b6b;">${T("role_director")}</span>` : `<span class="chip">${a.department ? escapeHtml(deptLabel(a.department)) : "—"}</span>`}</td>
+      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : `<span class="chip">${a.department ? escapeHtml(deptLabel(a.department)) : "—"}</span>`}</td>
       <td><div class="row-actions">${a.uid === me.uid ? `<span class="muted" style="font-size:12px;">${T("you")}</span>` : `<button class="btn danger sm" data-del-account="${a.uid}">${T("remove")}</button>`}</div></td>
     </tr>`).join("");
     host.innerHTML = `<table><thead><tr><th>${T("c_username")}</th><th>${T("c_role")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -387,18 +367,17 @@
       <text x="70" y="66" text-anchor="middle" style="font-family:var(--display);font-size:24px;font-weight:700;fill:var(--ink);">${total}</text>
       <text x="70" y="86" text-anchor="middle" style="font-size:10px;fill:var(--muted);">${escapeHtml(T("st_total_slots"))}</text></svg>`;
   }
-  function renderAnalytics(filterDept, filterMajor) {
+  function renderAnalytics(filterDept) {
     const host = $("reportAnalytics");
     if (!host) return;
     if (!students.length) { host.innerHTML = ""; return; }
-    const pool = filterMajor ? students.filter((s) => s.major === filterMajor) : students;
 
-    if (canViewAll && !filterDept) {
+    if (isAdmin && !filterDept) {
       let cleared = 0;
-      pool.forEach((s) => { if (departments.length && departments.every((d) => statusOf(s.id, d) === "Completed")) cleared++; });
-      const remaining = pool.length - cleared;
+      students.forEach((s) => { if (departments.length && departments.every((d) => statusOf(s.id, d) === "Completed")) cleared++; });
+      const remaining = students.length - cleared;
       let c = 0, n = 0, p = 0;
-      pool.forEach((s) => departments.forEach((d) => { const st = statusOf(s.id, d); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; }));
+      students.forEach((s) => departments.forEach((d) => { const st = statusOf(s.id, d); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; }));
 
       const cards = `<div class="stat-grid" style="margin-bottom:16px;">
         ${stat(T("an_cleared"), cleared, { tone: "brand", icon: ICONS.students })}${stat(T("an_remaining"), remaining, { tone: "slate", icon: ICONS.slots })}${stat(T("st_completed"), c, { tone: "ok", icon: ICONS.completed })}${stat(T("st_pending"), p, { tone: "pending", icon: ICONS.pending })}</div>`;
@@ -413,11 +392,11 @@
           </div></div></div>`;
 
       const bars = departments.map((d) => {
-        let dc = 0; pool.forEach((s) => { if (statusOf(s.id, d) === "Completed") dc++; });
-        const pct = pool.length ? Math.round(dc / pool.length * 100) : 0;
+        let dc = 0; students.forEach((s) => { if (statusOf(s.id, d) === "Completed") dc++; });
+        const pct = students.length ? Math.round(dc / students.length * 100) : 0;
         return `<div style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-            <span class="name">${escapeHtml(deptLabel(d))}</span><span class="muted">${dc}/${pool.length}</span></div>
+            <span class="name">${escapeHtml(deptLabel(d))}</span><span class="muted">${dc}/${students.length}</span></div>
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:999px;height:10px;overflow:hidden;">
             <div style="width:${pct}%;height:100%;background:var(--ok);"></div></div></div>`;
       }).join("");
@@ -426,34 +405,23 @@
       host.innerHTML = cards + `<div class="grid-2" style="align-items:start;margin-bottom:22px;">${donutCard}${barCard}</div>`;
     } else {
       const dept = filterDept; let c = 0, n = 0, p = 0;
-      pool.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; });
+      students.forEach((s) => { const st = statusOf(s.id, dept); if (st === "Completed") c++; else if (st === "Not Completed") n++; else p++; });
       host.innerHTML = `<div class="stat-grid" style="margin-bottom:18px;">
-        ${stat(T("st_completed"), c, { tone: "ok", icon: ICONS.completed })}${stat(T("st_notcompleted"), n, { tone: "no", icon: ICONS.notcompleted })}${stat(T("st_pending"), p, { tone: "pending", icon: ICONS.pending })}${stat(T("st_students"), pool.length, { tone: "brand", icon: ICONS.students })}</div>`;
+        ${stat(T("st_completed"), c, { tone: "ok", icon: ICONS.completed })}${stat(T("st_notcompleted"), n, { tone: "no", icon: ICONS.notcompleted })}${stat(T("st_pending"), p, { tone: "pending", icon: ICONS.pending })}${stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students })}</div>`;
     }
   }
 
   function renderReport() {
     const host = $("reportTable");
-    const filterDept = canViewAll ? $("reportDeptFilter").value : me.department;
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
-    const mf = ($("reportMajorFilter") || {}).value || "";
-    const msel = $("reportMajorFilter");
-    if (msel) {
-      const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
-      const cur = msel.value;
-      msel.innerHTML = `<option value="">${T("all_majors")}</option>` +
-        MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
-        extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
-      if ([...msel.options].some((o) => o.value === cur)) msel.value = cur;
-    }
-    $("reportHeading").textContent = !canViewAll ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
-    renderAnalytics(filterDept, mf);
-    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), canViewAll ? T("e_norep_s") : ""); return; }
-    let pool = mf ? students.filter((s) => s.major === mf) : students;
-    if (canViewAll && !filterDept) {
+    $("reportHeading").textContent = !isAdmin ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
+    renderAnalytics(filterDept);
+    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), isAdmin ? T("e_norep_s") : ""); return; }
+    if (isAdmin && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
-      const list = sf ? pool.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : pool;
+      const list = sf ? students.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : students;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => {
         const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
@@ -462,7 +430,7 @@
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
-      const list = sf ? pool.filter((s) => statusOf(s.id, dept) === sf) : pool;
+      const list = sf ? students.filter((s) => statusOf(s.id, dept) === sf) : students;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => `<tr>
         <td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
@@ -474,17 +442,15 @@
 
   // ---------- CSV / PRINT ----------
   function exportCsv() {
-    const filterDept = canViewAll ? $("reportDeptFilter").value : me.department;
-    const mf = ($("reportMajorFilter") || {}).value || "";
-    const pool = mf ? students.filter((s) => s.major === mf) : students;
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     let header, rows;
-    if (canViewAll && !filterDept) {
+    if (isAdmin && !filterDept) {
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments.map(deptLabel)];
-      rows = pool.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
     } else {
       const dept = filterDept;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
-      rows = pool.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
     }
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -495,7 +461,7 @@
   }
   function csvCell(v) { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
   function printReport() {
-    const filterDept = canViewAll ? $("reportDeptFilter").value : me.department;
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     const title = filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full");
     const tableHTML = $("reportTable").innerHTML;
     const rtl = !(window.getLang && window.getLang() === "en");
@@ -658,13 +624,22 @@
     let days = Infinity;
     if (lastBackupAt && lastBackupAt.toDate) days = Math.floor((Date.now() - lastBackupAt.toDate().getTime()) / 86400000);
     if (days < 7) { host.innerHTML = ""; return; }
+    // Dismissed less than 7 days ago (synced across all devices) — stay hidden.
+    if (backupSnoozedAt && backupSnoozedAt.toDate && (Date.now() - backupSnoozedAt.toDate().getTime()) < 7 * 86400000) { host.innerHTML = ""; return; }
     const msg = days === Infinity ? T("bk_never") : T("bk_stale", { n: days });
     host.innerHTML = `<div class="backup-reminder">
       <span class="bk-ic">🛡️</span>
       <div class="bk-text"><b>${T("bk_title")}</b><span>${escapeHtml(msg)}</span></div>
-      <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
+      <div class="bk-actions">
+        <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
+        <button class="btn ghost sm" id="bkLater">${T("bk_later")}</button>
+      </div>
     </div>`;
     $("bkNow").addEventListener("click", backupAll);
+    $("bkLater").addEventListener("click", () => {
+      host.innerHTML = ""; // hide instantly on this device
+      db.collection("meta").doc("backup").set({ snoozedAt: firebase.firestore.FieldValue.serverTimestamp(), snoozedBy: me.username }, { merge: true }).catch(() => {});
+    });
   }
 
   async function deleteAllInChunks(docs) {
@@ -997,7 +972,7 @@
   }
 
   function markModal(student) {
-    const dept = canViewAll ? activeDept : me.department;
+    const dept = isAdmin ? activeDept : me.department;
     const cur = statusOf(student.id, dept), note = noteOf(student.id, dept);
     openModal(`
       <div class="modal-head"><h3>${T("m_intern_status")}</h3><button class="x" data-close>&times;</button></div>
@@ -1047,7 +1022,6 @@
         <div class="field"><label>${T("f_role")}</label><div class="pills">
           <label><input type="radio" name="m_role" value="department" checked/> ${T("role_dept")}</label>
           <label><input type="radio" name="m_role" value="admin"/> ${T("role_admin")}</label>
-          <label><input type="radio" name="m_role" value="director"/> ${T("role_director")}</label>
         </div></div>
         <div class="field" id="deptWrap"><label>${T("f_dept")}</label>
           <select id="m_acc_dept">${departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(deptLabel(d))}</option>`).join("")}</select></div>
@@ -1103,9 +1077,9 @@
     document.querySelectorAll(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     const map = {
-      overview: ["t_overview", canViewAll ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
-      internships: [canViewAll ? "t_internships" : "mydept_title", canViewAll ? "s_intern_admin" : "s_intern_dept"],
-      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", canViewAll ? "s_reports" : ""],
+      overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
+      internships: [isAdmin ? "t_internships" : "mydept_title", isAdmin ? "s_intern_admin" : "s_intern_dept"],
+      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""],
       history: ["t_history", "s_history"]
     };
     const m = map[view] || ["", ""];
@@ -1137,7 +1111,7 @@
     if (mark) { markModal(students.find((s) => s.id === mark.dataset.mark)); return; }
     const quick = t.closest("[data-quick]");
     if (quick) {
-      const dept = canViewAll ? activeDept : me.department;
+      const dept = isAdmin ? activeDept : me.department;
       quickSet(quick.dataset.quick, dept, quick.dataset.status);
       return;
     }
@@ -1180,14 +1154,12 @@
   $("studentTimeFilter").addEventListener("change", renderStudents);
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
-  { const imf = $("internMajorFilter"); if (imf) imf.addEventListener("change", renderInternships); }
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
   $("reportDeptFilter").addEventListener("change", renderReport);
   { const rsf = $("reportStatusFilter"); if (rsf) rsf.addEventListener("change", renderReport); }
-  { const rmf = $("reportMajorFilter"); if (rmf) rmf.addEventListener("change", renderReport); }
 
   function populateDeptSelectors() {
-    if (!canViewAll) return;
+    if (!isAdmin) return;
     const idf = $("internDeptFilter"), rdf = $("reportDeptFilter");
     if (idf) {
       const cur = idf.value || activeDept;
