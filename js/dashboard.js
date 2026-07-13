@@ -143,6 +143,16 @@
   const MAJORS = ["IT", "Business Administration", "Accounting", "Banking", "Public Relations"];
   const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
   function majorLabel(s) { return MAJOR_KEY[s] ? T(MAJOR_KEY[s]) : (s || "—"); }
+  function fillMajorSelect(sel) {
+    if (!sel) return "";
+    const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${T("all_majors")}</option>` +
+      MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
+      extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+    if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
+    return sel.value;
+  }
 
   const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records", "بەشە ناوخۆیی": "dept_internal", "بەشەناوخۆیی": "dept_internal" };
   function deptLabel(d) { return DEPT_KEY[d] ? T(DEPT_KEY[d]) : (d || "—"); }
@@ -317,9 +327,10 @@
     if (!students.length) { host.innerHTML = emptyState(viewAll ? T("e_nostudents_t") : T("e_nostud_dept_s"), viewAll ? T("e_nostud_admin_s") : ""); return; }
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
+    const mf = isAdmin ? fillMajorSelect($("internMajorFilter")) : "";
     const list = students.filter((s) => {
       const st = statusOf(s.id, dept);
-      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf);
+      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf) && (!mf || s.major === mf);
     });
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
     const rows = list.map((s) => {
@@ -430,13 +441,15 @@
     const viewAll = isAdmin || isRagr;
     const filterDept = viewAll ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
+    const mf = isAdmin ? fillMajorSelect($("reportMajorFilter")) : "";
     $("reportHeading").textContent = (!viewAll || isRagr) ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
     renderAnalytics(filterDept);
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), viewAll ? T("e_norep_s") : ""); return; }
     if (viewAll && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
-      const list = sf ? students.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : students;
+      const base = mf ? students.filter((s) => s.major === mf) : students;
+      const list = sf ? base.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : base;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => {
         const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
@@ -445,7 +458,8 @@
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
-      const list = sf ? students.filter((s) => statusOf(s.id, dept) === sf) : students;
+      const base = mf ? students.filter((s) => s.major === mf) : students;
+      const list = sf ? base.filter((s) => statusOf(s.id, dept) === sf) : base;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => `<tr>
         <td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
@@ -1172,6 +1186,8 @@
   $("studentTimeFilter").addEventListener("change", renderStudents);
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
+  $("internMajorFilter").addEventListener("change", renderInternships);
+  $("reportMajorFilter").addEventListener("change", renderReport);
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
   $("reportDeptFilter").addEventListener("change", renderReport);
   { const rsf = $("reportStatusFilter"); if (rsf) rsf.addEventListener("change", renderReport); }
