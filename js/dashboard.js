@@ -54,6 +54,8 @@
         // Dean can browse every department (read-only) — re-show the filters only.
         const idf = $("internDeptFilter"); if (idf) idf.style.display = "";
         const rdf = $("reportDeptFilter"); if (rdf) rdf.style.display = "";
+        const imf = $("internMajorFilter"); if (imf) imf.style.display = "none";
+        const rmf = $("reportMajorFilter"); if (rmf) rmf.style.display = "none";
         // Dean sees ONLY the report: hide Overview + Internships links and group labels.
         document.querySelectorAll('.nav a[data-view="overview"], .nav a[data-view="internships"]').forEach((el) => (el.style.display = "none"));
         document.querySelectorAll(".nav .nav-label").forEach((el) => (el.style.display = "none"));
@@ -327,7 +329,7 @@
     if (!students.length) { host.innerHTML = emptyState(viewAll ? T("e_nostudents_t") : T("e_nostud_dept_s"), viewAll ? T("e_nostud_admin_s") : ""); return; }
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
-    const mf = isAdmin ? fillMajorSelect($("internMajorFilter")) : "";
+    const mf = !isRagr ? fillMajorSelect($("internMajorFilter")) : "";
     const list = students.filter((s) => {
       const st = statusOf(s.id, dept);
       return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf) && (!mf || s.major === mf);
@@ -441,14 +443,15 @@
     const viewAll = isAdmin || isRagr;
     const filterDept = viewAll ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
-    const mf = isAdmin ? fillMajorSelect($("reportMajorFilter")) : "";
+    const mf = !isRagr ? fillMajorSelect($("reportMajorFilter")) : "";
+    const tfR = isAdmin ? (($("reportTimeFilter") || {}).value || "") : "";
     $("reportHeading").textContent = (!viewAll || isRagr) ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
     renderAnalytics(filterDept);
     if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), viewAll ? T("e_norep_s") : ""); return; }
     if (viewAll && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
-      const base = mf ? students.filter((s) => s.major === mf) : students;
+      const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
       const list = sf ? base.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : base;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => {
@@ -458,7 +461,7 @@
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
-      const base = mf ? students.filter((s) => s.major === mf) : students;
+      const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
       const list = sf ? base.filter((s) => statusOf(s.id, dept) === sf) : base;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => `<tr>
@@ -472,14 +475,21 @@
   // ---------- CSV / PRINT ----------
   function exportCsv() {
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
+    // Respect the on-screen filters so the CSV matches exactly what the admin sees.
+    const mf = ($("reportMajorFilter") || {}).value || "";
+    const tfR = isAdmin ? (($("reportTimeFilter") || {}).value || "") : "";
+    const sf = ($("reportStatusFilter") || {}).value || "";
+    const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
     let header, rows;
     if (isAdmin && !filterDept) {
+      const list = sf ? base.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : base;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments.map(deptLabel)];
-      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+      rows = list.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
     } else {
       const dept = filterDept;
+      const list = sf ? base.filter((s) => statusOf(s.id, dept) === sf) : base;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
-      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+      rows = list.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
     }
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1188,6 +1198,7 @@
   $("internStatusFilter").addEventListener("change", renderInternships);
   $("internMajorFilter").addEventListener("change", renderInternships);
   $("reportMajorFilter").addEventListener("change", renderReport);
+  $("reportTimeFilter").addEventListener("change", renderReport);
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
   $("reportDeptFilter").addEventListener("change", renderReport);
   { const rsf = $("reportStatusFilter"); if (rsf) rsf.addEventListener("change", renderReport); }
