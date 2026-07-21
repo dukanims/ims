@@ -5,7 +5,7 @@
   "use strict";
 
   let me = null, isAdmin = false;
-  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null;
+  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null, lastDismissAt = null;
   let currentView = "overview", activeDept = "";
   const unsub = [];
 
@@ -95,6 +95,7 @@
       }, () => {}));
       unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
         lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
+        lastDismissAt = (d.exists && d.data().dismissedAt) ? d.data().dismissedAt : null;
         renderBackupReminder();
       }, () => {}));
     }
@@ -658,7 +659,7 @@
     w.document.close();
   }
   // ---------- BACKUP / RESET / IMPORT (admin) ----------
-  function backupAll() {
+  async function backupAll() {
     const data = {
       app: "IMS", exportedAt: new Date().toISOString(),
       departments: departments.slice(),
@@ -671,21 +672,50 @@
     a.href = URL.createObjectURL(blob);
     a.download = `IMS_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click(); URL.revokeObjectURL(a.href); toast(T("to_backup_done"), "ok");
-    if (isAdmin) db.collection("meta").doc("backup").set({ lastBackup: firebase.firestore.FieldValue.serverTimestamp(), by: me.username }).catch(() => {});
+    if (isAdmin) {
+      const ku = !(window.getLang && window.getLang() === "en");
+      try {
+        await db.collection("meta").doc("backup").set({ lastBackup: firebase.firestore.FieldValue.serverTimestamp(), by: me.username }, { merge: true });
+        toast(ku ? "بەرواری باکەپ تۆمارکرا ✓" : "Backup date recorded ✓", "ok");
+      } catch (e) {
+        toast((ku ? "ئاگاداری: بەرواری باکەپ تۆمار نەکرا، تکایە دووبارە هەوڵبدەرەوە — " : "Warning: backup date was not recorded, please try again — ") + (e && e.message ? e.message : ""), "err");
+        renderBackupReminder();
+      }
+    }
   }
   function renderBackupReminder() {
     const host = $("backupReminder"); if (!host) return;
     if (!isAdmin) { host.innerHTML = ""; return; }
-    let days = Infinity;
-    if (lastBackupAt && lastBackupAt.toDate) days = Math.floor((Date.now() - lastBackupAt.toDate().getTime()) / 86400000);
-    if (days < 7) { host.innerHTML = ""; return; }
+    const bMs = (lastBackupAt && lastBackupAt.toDate) ? lastBackupAt.toDate().getTime() : 0;
+    const dMs = (lastDismissAt && lastDismissAt.toDate) ? lastDismissAt.toDate().getTime() : 0;
+    const lastAction = Math.max(bMs, dMs);
+    if (lastAction && (Date.now() - lastAction) < 7 * 86400000) { host.innerHTML = ""; return; }
+    let days = bMs ? Math.floor((Date.now() - bMs) / 86400000) : Infinity;
     const msg = days === Infinity ? T("bk_never") : T("bk_stale", { n: days });
+    const ku = !(window.getLang && window.getLang() === "en");
     host.innerHTML = `<div class="backup-reminder">
       <span class="bk-ic">🛡️</span>
       <div class="bk-text"><b>${T("bk_title")}</b><span>${escapeHtml(msg)}</span></div>
       <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
+      <button class="btn ghost sm" id="bkLater">${ku ? "دواتر" : "Later"}</button>
     </div>`;
-    $("bkNow").addEventListener("click", backupAll);
+    $("bkNow").addEventListener("click", () => { host.innerHTML = ""; backupAll(); });
+    $("bkLater").addEventListener("click", dismissBackupReminder);
+  }
+
+  async function dismissBackupReminder() {
+    if (!isAdmin) return;
+    const host = $("backupReminder"); if (host) host.innerHTML = "";
+    const ku = !(window.getLang && window.getLang() === "en");
+    try {
+      await db.collection("meta").doc("backup").set(
+        { dismissedAt: firebase.firestore.FieldValue.serverTimestamp(), dismissedBy: me.username },
+        { merge: true });
+      toast(ku ? "باشە، هەفتەیەکی تر بیرت دەخەمەوە" : "Okay, I'll remind you next week", "ok");
+    } catch (e) {
+      toast((ku ? "نەتوانرا داخرێت — " : "Could not dismiss — ") + (e && e.message ? e.message : ""), "err");
+      renderBackupReminder();
+    }
   }
 
   async function deleteAllInChunks(docs) {
