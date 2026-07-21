@@ -24,14 +24,6 @@ service cloud.firestore {
         && profile().role == 'admin';
     }
 
-    // True for the institute dean (ڕاگر) — a read-only viewer of all
-    // departments. Matched by role 'ragr' or the username 'ragr'.
-    function isRagr() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && (profile().role == 'ragr' || profile().username == 'ragr');
-    }
-
     // True if the caller has a profile with a (non-empty) department.
     function isDeptUser() {
       return isSignedIn()
@@ -82,14 +74,13 @@ service cloud.firestore {
     // DELETE: admins only.
     match /internships/{recordId} {
       allow read: if isAdmin()
-        || isRagr()
         || (isDeptUser() && resource.data.departmentId == myDept());
 
       allow create: if isAdmin()
-        || (isDeptUser() && !isRagr() && request.resource.data.departmentId == myDept());
+        || (isDeptUser() && request.resource.data.departmentId == myDept());
 
       allow update: if isAdmin()
-        || (isDeptUser() && !isRagr()
+        || (isDeptUser()
             && resource.data.departmentId == myDept()
             && request.resource.data.departmentId == myDept());
 

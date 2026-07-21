@@ -891,12 +891,10 @@ button:disabled { cursor: not-allowed; }
 .backup-reminder .bk-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .backup-reminder .bk-text b { font-size: 14px; color: #6b4e0a; }
 .backup-reminder .bk-text span { font-size: 12.5px; color: #7a5f17; }
-.backup-reminder .bk-actions { display: flex; gap: 8px; flex: none; }
 .backup-reminder .btn { flex: none; }
 @media (max-width: 640px) {
   .backup-reminder { flex-wrap: wrap; }
-  .backup-reminder .bk-actions { flex: 1 1 100%; }
-  .backup-reminder .bk-actions .btn { flex: 1 1 0; }
+  .backup-reminder .btn { flex: 1 1 100%; }
 }
 
 /* Headings/labels use a normal (arrow) cursor, not the text I-beam (v86) */
@@ -915,3 +913,31 @@ h1, h2, h3, h4, h5, h6,
   cursor: text; -webkit-user-select: text; user-select: text;
 }
 .modal-body select { cursor: pointer; }
+
+/* ============ Pagination (pager) ============ */
+.pager {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; min-width: 0;
+  padding: 14px 16px; border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.pager-info { font-size: 13px; color: var(--muted); }
+.pager-ctrls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pager-btn {
+  min-width: 36px; min-height: 36px; padding: 6px 12px;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text); font-family: var(--body);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.pager-btn:hover:not(:disabled):not(.active) { background: var(--surface-2); border-color: var(--brand-600); }
+.pager-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; cursor: default; }
+.pager-btn.nav { font-weight: 500; color: var(--brand-600); }
+.pager-btn:disabled { opacity: .45; cursor: not-allowed; }
+.pager-gap { padding: 0 4px; color: var(--faint); font-size: 14px; align-self: center; }
+
+@media (max-width: 640px) {
+  .pager { justify-content: center; padding: 14px 12px; }
+  .pager-info { width: 100%; text-align: center; order: 2; }
+  .pager-ctrls { order: 1; justify-content: center; }
+}

@@ -4,8 +4,8 @@
 (function () {
   "use strict";
 
-  let me = null, isAdmin = false, isRagr = false;
-  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null, backupSnoozedAt = null;
+  let me = null, isAdmin = false;
+  let students = [], departments = [], accounts = [], internMap = {}, historyLog = [], lastBackupAt = null;
   let currentView = "overview", activeDept = "";
   const unsub = [];
 
@@ -30,13 +30,11 @@
     const profile = await getUserProfile(user.uid);
     if (!profile) { await auth.signOut(); window.location.replace("index.html"); return; }
     me = profile; isAdmin = profile.role === "admin";
-    // ڕاگری پەیمانگا — read-only viewer of all departments (by role, or the "ragr" username)
-    isRagr = !isAdmin && (profile.role === "ragr" || (profile.username || "").toLowerCase() === "ragr");
-    activeDept = (isAdmin || isRagr) ? "" : profile.department;
+    activeDept = isAdmin ? "" : profile.department;
     setupRoleUI();
     if (isAdmin) await ensureDepartmentsSeeded();
     attachListeners();
-    navigate(isRagr ? "reports" : "overview");
+    navigate("overview");
     $("app").style.visibility = "visible";
   });
 
@@ -50,21 +48,8 @@
   function setupRoleUI() {
     if (!isAdmin) {
       document.querySelectorAll("[data-admin]").forEach((el) => (el.style.display = "none"));
-      if (isRagr) {
-        // Dean can browse every department (read-only) — re-show the filters only.
-        const idf = $("internDeptFilter"); if (idf) idf.style.display = "";
-        const rdf = $("reportDeptFilter"); if (rdf) rdf.style.display = "";
-        const imf = $("internMajorFilter"); if (imf) imf.style.display = "none";
-        const rmf = $("reportMajorFilter"); if (rmf) rmf.style.display = "none";
-        // Dean sees ONLY the report: hide Overview + Internships links and group labels.
-        document.querySelectorAll('.nav a[data-view="overview"], .nav a[data-view="internships"]').forEach((el) => (el.style.display = "none"));
-        document.querySelectorAll(".nav .nav-label").forEach((el) => (el.style.display = "none"));
-        const rp = document.querySelector('.nav a[data-view="reports"] span'); if (rp) { rp.removeAttribute("data-i18n"); rp.textContent = T("ragr_report"); }
-        const ey = document.querySelector("#view-reports .eyebrow-l"); if (ey) ey.style.display = "none";
-      } else {
-        const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
-        const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
-      }
+      const lbl = $("navInternLabel"); if (lbl) lbl.setAttribute("data-i18n", "nav_mydept");
+      const eb = $("internEyebrow"); if (eb) eb.setAttribute("data-i18n", "mydept_eyebrow");
       // Department accounts are Kurdish-only: force Kurdish and remove the toggle.
       const tgl = $("langToggle"); if (tgl) tgl.style.display = "none";
       if (window.getLang && window.getLang() !== "ku" && window.setLang) window.setLang("ku");
@@ -75,8 +60,8 @@
   }
   function updateRoleText() {
     $("sideName").textContent = me.username;
-    $("sideRole").textContent = isAdmin ? T("administrator") : (isRagr ? T("ragr_role") : deptLabel(me.department));
-    $("roleChip").textContent = isAdmin ? T("super_admin") : (isRagr ? T("ragr_role") : T("department_role", { d: deptLabel(me.department) }));
+    $("sideRole").textContent = isAdmin ? T("administrator") : deptLabel(me.department);
+    $("roleChip").textContent = isAdmin ? T("super_admin") : T("department_role", { d: deptLabel(me.department) });
   }
 
   // ---------- LISTENERS ----------
@@ -88,11 +73,11 @@
     }));
     unsub.push(db.collection("departments").onSnapshot((s) => {
       departments = s.docs.map((d) => d.data().name).sort();
-      if (!isAdmin && !isRagr) departments = [me.department];
-      if ((isAdmin || isRagr) && !activeDept && departments.length) activeDept = departments[0];
+      if (!isAdmin) departments = [me.department];
+      if (isAdmin && !activeDept && departments.length) activeDept = departments[0];
       populateDeptSelectors(); refresh();
     }));
-    const internQuery = (isAdmin || isRagr)
+    const internQuery = isAdmin
       ? db.collection("internships")
       : db.collection("internships").where("departmentId", "==", me.department);
     unsub.push(internQuery.onSnapshot((s) => {
@@ -110,7 +95,6 @@
       }, () => {}));
       unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
         lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
-        backupSnoozedAt = (d.exists && d.data().snoozedAt) ? d.data().snoozedAt : null;
         renderBackupReminder();
       }, () => {}));
     }
@@ -145,16 +129,6 @@
   const MAJORS = ["IT", "Business Administration", "Accounting", "Banking", "Public Relations"];
   const MAJOR_KEY = { "IT": "major_it", "Business Administration": "major_admin", "Accounting": "major_accounting", "Banking": "major_bank", "Public Relations": "major_pr" };
   function majorLabel(s) { return MAJOR_KEY[s] ? T(MAJOR_KEY[s]) : (s || "—"); }
-  function fillMajorSelect(sel) {
-    if (!sel) return "";
-    const extra = Array.from(new Set(students.map((s) => s.major).filter((m) => m && !MAJORS.includes(m))));
-    const cur = sel.value;
-    sel.innerHTML = `<option value="">${T("all_majors")}</option>` +
-      MAJORS.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(majorLabel(m))}</option>`).join("") +
-      extra.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
-    if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
-    return sel.value;
-  }
 
   const DEPT_KEY = { "کتێبخانە": "dept_library", "دارایی": "dept_finance", "گەنجینە": "dept_warehouse", "تۆمارگا": "dept_records", "بەشە ناوخۆیی": "dept_internal", "بەشەناوخۆیی": "dept_internal" };
   function deptLabel(d) { return DEPT_KEY[d] ? T(DEPT_KEY[d]) : (d || "—"); }
@@ -230,7 +204,7 @@
   }
   function renderStats() {
     const grid = $("statGrid");
-    if (isAdmin || isRagr) {
+    if (isAdmin) {
       let completed = 0, total = 0;
       students.forEach((s) => departments.forEach((d) => { total++; if (statusOf(s.id, d) === "Completed") completed++; }));
       grid.innerHTML = stat(T("st_students"), students.length, { tone: "brand", icon: ICONS.students }) +
@@ -254,7 +228,7 @@
   }
   function renderOverview() {
     const host = $("ovTable");
-    if (isAdmin || isRagr) {
+    if (isAdmin) {
       $("ovTableTitle").textContent = T("ov_glance");
       if (!departments.length) { host.innerHTML = emptyState(T("e_nodepts_t"), T("e_nodepts_s")); return; }
       const rows = departments.map((d) => {
@@ -275,6 +249,56 @@
         `<tr><td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td><td data-label="${T("c_major")}">${escapeHtml(majorLabel(s.major))}</td><td data-label="${T("c_stage")}">${escapeHtml(stageLabel(s.stage))}</td><td data-label="${T("c_status")}">${statusTag(r.status)}</td><td class="note-text" data-label="${T("c_note")}">${escapeHtml(r.note || "—")}</td><td class="muted" data-label="${T("c_updated")}">${fmtDate(r.date)}</td></tr>`).join("");
       host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
+  }
+
+  // ---------- PAGINATION ----------
+  const PAGE_SIZE = 50;
+  let studentPage = 1, internPage = 1;
+  let lastStudentSig = "\u0000", lastInternSig = "\u0000";
+
+  function pagerLabel(kind, a, b, c) {
+    const ku = !(window.getLang && window.getLang() === "en");
+    if (kind === "range") return ku ? `پیشاندانی ${a}–${b} لە ${c}` : `Showing ${a}–${b} of ${c}`;
+    if (kind === "prev") return ku ? "پێشوو" : "Prev";
+    return ku ? "دواتر" : "Next";
+  }
+  function pageNumbers(cur, tp) {
+    const set = new Set([1, tp, cur, cur - 1, cur + 1]);
+    const keep = [];
+    for (let i = 1; i <= tp; i++) if (set.has(i)) keep.push(i);
+    const out = []; let prev = 0;
+    keep.forEach((n) => { if (prev && n - prev > 1) out.push("…"); out.push(n); prev = n; });
+    return out;
+  }
+  function paginate(list, kind) {
+    const total = list.length;
+    const tp = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    let page = kind === "students" ? studentPage : internPage;
+    if (page > tp) page = tp;
+    if (page < 1) page = 1;
+    if (kind === "students") studentPage = page; else internPage = page;
+    const startIdx = (page - 1) * PAGE_SIZE;
+    return { slice: list.slice(startIdx, startIdx + PAGE_SIZE), page, total };
+  }
+  function buildPager(kind, page, total) {
+    const tp = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (tp <= 1) return "";
+    const start = (page - 1) * PAGE_SIZE + 1;
+    const end = Math.min(total, page * PAGE_SIZE);
+    const nums = pageNumbers(page, tp).map((n) =>
+      n === "…" ? `<span class="pager-gap">…</span>`
+        : `<button type="button" class="pager-btn${n === page ? " active" : ""}" data-page="${n}" data-pager="${kind}">${n}</button>`
+    ).join("");
+    const prevAttr = page <= 1 ? " disabled" : "";
+    const nextAttr = page >= tp ? " disabled" : "";
+    return `<div class="pager">
+      <div class="pager-info">${pagerLabel("range", start, end, total)}</div>
+      <div class="pager-ctrls">
+        <button type="button" class="pager-btn nav" data-page="${page - 1}" data-pager="${kind}"${prevAttr}>‹ ${pagerLabel("prev")}</button>
+        ${nums}
+        <button type="button" class="pager-btn nav" data-page="${page + 1}" data-pager="${kind}"${nextAttr}>${pagerLabel("next")} ›</button>
+      </div>
+    </div>`;
   }
 
   function renderStudents() {
@@ -305,7 +329,10 @@
     const host = $("studentsTable");
     if (!students.length) { host.innerHTML = emptyState(T("e_nostudents_t"), T("e_nostudents_s")); return; }
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
-    const rows = list.map((s) => `<tr>
+    const _sSig = JSON.stringify([q, tf, mf, sf]);
+    if (_sSig !== lastStudentSig) { studentPage = 1; lastStudentSig = _sSig; }
+    const _sPg = paginate(list, "students");
+    const rows = _sPg.slice.map((s) => `<tr>
       <td data-label="${T("c_fullname")}"><div class="name">${escapeHtml(s.name)}</div></td>
       <td class="id" data-label="${T("c_studentid")}">${escapeHtml(s.studentId)}</td>
       <td data-label="${T("c_major")}">${escapeHtml(majorLabel(s.major))}</td>
@@ -316,27 +343,27 @@
         <button class="btn ghost sm" data-edit-student="${s.id}">${T("edit")}</button>
         <button class="btn danger sm" data-del-student="${s.id}">${T("del")}</button>
       </div></td></tr>`).join("");
-    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_fullname")}</th><th>${T("c_studentid")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>` + buildPager("students", _sPg.page, _sPg.total);
   }
 
   function renderInternships() {
-    const viewAll = isAdmin || isRagr;
-    const dept = viewAll ? activeDept : me.department;
-    if (viewAll) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
+    const dept = isAdmin ? activeDept : me.department;
+    if (isAdmin) { $("internHeading").textContent = dept ? T("h_marking", { d: deptLabel(dept) }) : T("h_intern_records"); }
     else { $("internHeading").textContent = ""; }
     const host = $("internTable");
-    if (viewAll && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
-    if (!students.length) { host.innerHTML = emptyState(viewAll ? T("e_nostudents_t") : T("e_nostud_dept_s"), viewAll ? T("e_nostud_admin_s") : ""); return; }
+    if (isAdmin && !dept) { host.innerHTML = emptyState(T("e_choose_t"), T("e_choose_s")); return; }
+    if (!students.length) { host.innerHTML = emptyState(isAdmin ? T("e_nostudents_t") : T("e_nostud_dept_s"), isAdmin ? T("e_nostud_admin_s") : ""); return; }
     const q = ($("internSearch").value || "").toLowerCase().trim();
     const sf = $("internStatusFilter").value;
-    const mf = !isRagr ? fillMajorSelect($("internMajorFilter")) : "";
-    const tf = isAdmin ? (($("internTimeFilter") || {}).value || "") : "";
     const list = students.filter((s) => {
       const st = statusOf(s.id, dept);
-      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf) && (!mf || s.major === mf) && (!tf || s.time === tf);
+      return (!q || (s.name || "").toLowerCase().includes(q) || String(s.studentId || "").toLowerCase().includes(q)) && (!sf || st === sf);
     });
     if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
-    const rows = list.map((s) => {
+    const _iSig = JSON.stringify([dept, q, sf]);
+    if (_iSig !== lastInternSig) { internPage = 1; lastInternSig = _iSig; }
+    const _iPg = paginate(list, "intern");
+    const rows = _iPg.slice.map((s) => {
       const r = internMap[key(s.id, dept)];
       const cur = statusOf(s.id, dept);
       return `<tr>
@@ -345,14 +372,14 @@
         <td data-label="${T("c_status")}">${statusTag(cur)}</td>
         <td class="note-text" data-label="${T("c_note")}">${escapeHtml(noteOf(s.id, dept) || "—")}</td>
         <td class="muted" data-label="${T("c_updated")}">${r ? fmtDate(r.date) : "—"}</td>
-        ${isRagr ? "" : `<td class="actions-cell"><div class="row-actions">
+        <td class="actions-cell"><div class="row-actions">
           <button class="btn sm ${cur === "Completed" ? "" : "ghost"}" data-quick="${s.id}" data-status="Completed">${T("s_completed")}</button>
           <button class="btn sm ${cur === "Not Completed" ? "danger" : "ghost"}" data-quick="${s.id}" data-status="Not Completed">${T("s_notcompleted")}</button>
           <button class="btn ghost sm" data-mark="${s.id}">${T("btn_note")}</button>
-        </div></td>`}
+        </div></td>
       </tr>`;
     }).join("");
-    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th>${isRagr ? "" : "<th></th>"}</tr></thead><tbody>${rows}</tbody></table>`;
+    host.innerHTML = `<table class="list-table"><thead><tr><th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_status")}</th><th>${T("c_note")}</th><th>${T("c_updated")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>` + buildPager("intern", _iPg.page, _iPg.total);
   }
 
   function renderDepartments() {
@@ -372,7 +399,7 @@
     if (!accounts.length) { host.innerHTML = emptyState(T("e_noacc_t"), T("e_noacc_s")); return; }
     const rows = accounts.slice().sort((a, b) => (a.role || "").localeCompare(b.role || "")).map((a) => `<tr>
       <td class="name">${escapeHtml(a.username)}</td>
-      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : (a.role === "ragr" || (a.username || "").toLowerCase() === "ragr") ? `<span class="tag pending">${T("ragr_role")}</span>` : `<span class="chip">${a.department ? escapeHtml(deptLabel(a.department)) : "—"}</span>`}</td>
+      <td>${a.role === "admin" ? `<span class="tag gold">${T("role_admin")}</span>` : `<span class="chip">${a.department ? escapeHtml(deptLabel(a.department)) : "—"}</span>`}</td>
       <td><div class="row-actions">${a.uid === me.uid ? `<span class="muted" style="font-size:12px;">${T("you")}</span>` : `<button class="btn danger sm" data-del-account="${a.uid}">${T("remove")}</button>`}</div></td>
     </tr>`).join("");
     host.innerHTML = `<table><thead><tr><th>${T("c_username")}</th><th>${T("c_role")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -441,19 +468,15 @@
 
   function renderReport() {
     const host = $("reportTable");
-    const viewAll = isAdmin || isRagr;
-    const filterDept = viewAll ? $("reportDeptFilter").value : me.department;
+    const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
     const sf = ($("reportStatusFilter") || {}).value || "";
-    const mf = !isRagr ? fillMajorSelect($("reportMajorFilter")) : "";
-    const tfR = isAdmin ? (($("reportTimeFilter") || {}).value || "") : "";
-    $("reportHeading").textContent = (!viewAll || isRagr) ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
+    $("reportHeading").textContent = !isAdmin ? "" : (filterDept ? T("h_report_dept", { d: deptLabel(filterDept) }) : T("h_report_full"));
     renderAnalytics(filterDept);
-    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), viewAll ? T("e_norep_s") : ""); return; }
-    if (viewAll && !filterDept) {
+    if (!students.length) { host.innerHTML = emptyState(T("e_norep_t"), isAdmin ? T("e_norep_s") : ""); return; }
+    if (isAdmin && !filterDept) {
       const head = `<th>${T("c_student")}</th><th>${T("c_id")}</th><th>${T("c_major")}</th><th>${T("c_stage")}</th><th>${T("c_studytime")}</th>` +
         departments.map((d) => `<th class="matrix-cell">${escapeHtml(deptLabel(d))}</th>`).join("");
-      const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
-      const list = sf ? base.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : base;
+      const list = sf ? students.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : students;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => {
         const cells = departments.map((d) => `<td class="matrix-cell">${statusTag(statusOf(s.id, d))}</td>`).join("");
@@ -462,8 +485,7 @@
       host.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     } else {
       const dept = filterDept;
-      const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
-      const list = sf ? base.filter((s) => statusOf(s.id, dept) === sf) : base;
+      const list = sf ? students.filter((s) => statusOf(s.id, dept) === sf) : students;
       if (!list.length) { host.innerHTML = emptyState(T("e_nomatch_t"), T("e_nomatch_s")); return; }
       const rows = list.map((s) => `<tr>
         <td class="name" data-label="${T("c_student")}">${escapeHtml(s.name)}</td><td class="id" data-label="${T("c_id")}">${escapeHtml(s.studentId)}</td>
@@ -476,21 +498,14 @@
   // ---------- CSV / PRINT ----------
   function exportCsv() {
     const filterDept = isAdmin ? $("reportDeptFilter").value : me.department;
-    // Respect the on-screen filters so the CSV matches exactly what the admin sees.
-    const mf = ($("reportMajorFilter") || {}).value || "";
-    const tfR = isAdmin ? (($("reportTimeFilter") || {}).value || "") : "";
-    const sf = ($("reportStatusFilter") || {}).value || "";
-    const base = students.filter((s) => (!mf || s.major === mf) && (!tfR || s.time === tfR));
     let header, rows;
     if (isAdmin && !filterDept) {
-      const list = sf ? base.filter((s) => departments.some((d) => statusOf(s.id, d) === sf)) : base;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), ...departments.map(deptLabel)];
-      rows = list.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), ...departments.map((d) => statusLabel(statusOf(s.id, d)))]);
     } else {
       const dept = filterDept;
-      const list = sf ? base.filter((s) => statusOf(s.id, dept) === sf) : base;
       header = [T("c_fullname"), T("c_studentid"), T("c_major"), T("c_stage"), T("c_studytime"), T("c_department"), T("c_status"), T("c_note")];
-      rows = list.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
+      rows = students.map((s) => [s.name, s.studentId, majorLabel(s.major), stageLabel(s.stage), timeLabel(s.time), deptLabel(dept), statusLabel(statusOf(s.id, dept)), noteOf(s.id, dept)]);
     }
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -664,22 +679,13 @@
     let days = Infinity;
     if (lastBackupAt && lastBackupAt.toDate) days = Math.floor((Date.now() - lastBackupAt.toDate().getTime()) / 86400000);
     if (days < 7) { host.innerHTML = ""; return; }
-    // Dismissed less than 7 days ago (synced across all devices) — stay hidden.
-    if (backupSnoozedAt && backupSnoozedAt.toDate && (Date.now() - backupSnoozedAt.toDate().getTime()) < 7 * 86400000) { host.innerHTML = ""; return; }
     const msg = days === Infinity ? T("bk_never") : T("bk_stale", { n: days });
     host.innerHTML = `<div class="backup-reminder">
       <span class="bk-ic">🛡️</span>
       <div class="bk-text"><b>${T("bk_title")}</b><span>${escapeHtml(msg)}</span></div>
-      <div class="bk-actions">
-        <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
-        <button class="btn ghost sm" id="bkLater">${T("bk_later")}</button>
-      </div>
+      <button class="btn gold sm" id="bkNow">${T("bk_now")}</button>
     </div>`;
     $("bkNow").addEventListener("click", backupAll);
-    $("bkLater").addEventListener("click", () => {
-      host.innerHTML = ""; // hide instantly on this device
-      db.collection("meta").doc("backup").set({ snoozedAt: firebase.firestore.FieldValue.serverTimestamp(), snoozedBy: me.username }, { merge: true }).catch(() => {});
-    });
   }
 
   async function deleteAllInChunks(docs) {
@@ -1061,7 +1067,6 @@
       <div class="modal-body"><div id="mErr" class="alert err"></div>
         <div class="field"><label>${T("f_role")}</label><div class="pills">
           <label><input type="radio" name="m_role" value="department" checked/> ${T("role_dept")}</label>
-          <label><input type="radio" name="m_role" value="ragr"/> ${T("ragr_role")}</label>
           <label><input type="radio" name="m_role" value="admin"/> ${T("role_admin")}</label>
         </div></div>
         <div class="field" id="deptWrap"><label>${T("f_dept")}</label>
@@ -1118,14 +1123,13 @@
     document.querySelectorAll(".nav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
     const map = {
-      overview: ["t_overview", (isAdmin || isRagr) ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
-      internships: [(isAdmin || isRagr) ? "t_internships" : "mydept_title", (isAdmin || isRagr) ? "s_intern_admin" : "s_intern_dept"],
-      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", (isAdmin || isRagr) ? "s_reports" : ""],
+      overview: ["t_overview", isAdmin ? "s_overview" : "s_overview_dept"], students: ["t_students", "s_students"],
+      internships: [isAdmin ? "t_internships" : "mydept_title", isAdmin ? "s_intern_admin" : "s_intern_dept"],
+      accounts: ["t_accounts", "s_accounts"], reports: ["t_reports", isAdmin ? "s_reports" : ""],
       history: ["t_history", "s_history"]
     };
     const m = map[view] || ["", ""];
-    if (isRagr && view === "reports") { $("pageTitle").textContent = T("ragr_report"); $("pageSub").textContent = ""; }
-    else { $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]); }
+    $("pageTitle").textContent = T(m[0]); $("pageSub").textContent = T(m[1]);
     refresh();
   }
 
@@ -1150,9 +1154,8 @@
       return;
     }
     const mark = t.closest("[data-mark]");
-    if (mark) { if (isRagr) return; markModal(students.find((s) => s.id === mark.dataset.mark)); return; }
+    if (mark) { markModal(students.find((s) => s.id === mark.dataset.mark)); return; }
     const quick = t.closest("[data-quick]");
-    if (quick && isRagr) return;
     if (quick) {
       const dept = isAdmin ? activeDept : me.department;
       quickSet(quick.dataset.quick, dept, quick.dataset.status);
@@ -1177,6 +1180,18 @@
     }
   });
 
+  document.addEventListener("click", (e) => {
+    const pb = e.target.closest("[data-page]");
+    if (!pb || pb.hasAttribute("disabled")) return;
+    const n = parseInt(pb.getAttribute("data-page"), 10);
+    if (isNaN(n) || n < 1) return;
+    const kind = pb.getAttribute("data-pager");
+    if (kind === "students") { studentPage = n; renderStudents(); }
+    else if (kind === "intern") { internPage = n; renderInternships(); }
+    const host = kind === "students" ? $("studentsTable") : $("internTable");
+    if (host && host.scrollIntoView) host.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+
   $("addStudentBtn").addEventListener("click", () => studentModal(null));
   { const b = $("importStudentsBtn"); if (b) b.addEventListener("click", importModal); }
   { const b = $("backupBtn"); if (b) b.addEventListener("click", backupAll); }
@@ -1197,16 +1212,12 @@
   $("studentTimeFilter").addEventListener("change", renderStudents);
   $("internSearch").addEventListener("input", renderInternships);
   $("internStatusFilter").addEventListener("change", renderInternships);
-  $("internMajorFilter").addEventListener("change", renderInternships);
-  $("internTimeFilter").addEventListener("change", renderInternships);
-  $("reportMajorFilter").addEventListener("change", renderReport);
-  $("reportTimeFilter").addEventListener("change", renderReport);
   $("internDeptFilter").addEventListener("change", (e) => { activeDept = e.target.value; renderInternships(); });
   $("reportDeptFilter").addEventListener("change", renderReport);
   { const rsf = $("reportStatusFilter"); if (rsf) rsf.addEventListener("change", renderReport); }
 
   function populateDeptSelectors() {
-    if (!isAdmin && !isRagr) return;
+    if (!isAdmin) return;
     const idf = $("internDeptFilter"), rdf = $("reportDeptFilter");
     if (idf) {
       const cur = idf.value || activeDept;
