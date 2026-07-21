@@ -94,8 +94,9 @@
         if (currentView === "history") renderHistory();
       }, () => {}));
       unsub.push(db.collection("meta").doc("backup").onSnapshot((d) => {
-        lastBackupAt = (d.exists && d.data().lastBackup) ? d.data().lastBackup : null;
-        lastDismissAt = (d.exists && d.data().dismissedAt) ? d.data().dismissedAt : null;
+        const dat = d.exists ? d.data({ serverTimestamps: "estimate" }) : null;
+        lastBackupAt = (dat && dat.lastBackup) ? dat.lastBackup : null;
+        lastDismissAt = (dat && dat.dismissedAt) ? dat.dismissedAt : null;
         renderBackupReminder();
       }, () => {}));
     }
